@@ -69,6 +69,9 @@ summaryLength = 30
 # ----------------------------- params -----------------------------
 [params]
   env         = "production"
+  mainSections = ["posts"]
+  avatar      = "/img/avatar.png"
+  handle      = "@r00t.lvr"
   author      = "Muhammad Younas"
   description = "Writeups on web, mobile and container security by Muhammad Younas. Occasional reverse engineering and pwn.college notes."
   keywords    = ["security", "appsec", "web security", "mobile security", "container security", "reverse engineering", "hackthebox"]

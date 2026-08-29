@@ -1,0 +1,84 @@
+{{- define "main" }}
+
+{{- if not .IsHome | and .Title }}
+<header class="page-header">
+  {{- partial "breadcrumbs.html" . }}
+  <h1>
+    {{ .Title }}
+    {{- if and (or (eq .Kind `term`) (eq .Kind `section`)) (.Param "ShowRssButtonInSectionTermList") }}
+    {{- with .OutputFormats.Get "rss" }}
+    <a href="{{ .RelPermalink }}" title="RSS" aria-label="RSS">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+        stroke-linecap="round" stroke-linejoin="round" height="23">
+        <path d="M4 11a9 9 0 0 1 9 9" /><path d="M4 4a16 16 0 0 1 16 16" /><circle cx="5" cy="19" r="1" />
+      </svg>
+    </a>
+    {{- end }}
+    {{- end }}
+  </h1>
+</header>
+{{- end }}
+
+{{- if .Content }}
+<div class="post-content md-content">{{ .Content }}</div>
+{{- end }}
+
+{{- $pages := union .RegularPages .Sections }}
+{{- if .IsHome }}
+{{- $pages = where site.RegularPages "Type" "in" site.Params.mainSections }}
+{{- end }}
+{{- $paginator := .Paginate $pages }}
+{{- $isTerm := eq .Kind "term" }}
+
+<div class="post-list" {{ if $isTerm }}id="term-list"{{ end }}>
+{{- range $paginator.Pages }}
+{{- $p := . }}
+<article class="pe" data-url="{{ .RelPermalink }}">
+  <div class="pe-main">
+    <div class="pe-date">{{ .Date | time.Format "Jan 2, 2006" }}</div>
+    <h2 class="pe-title"><a href="{{ .Permalink }}">{{ .Title }}</a></h2>
+
+    {{- with .GetTerms "tags" }}
+    <ul class="pe-tags">
+      {{- range first 10 . }}
+      <li><a href="{{ .Permalink }}?from={{ $p.RelPermalink | urlquery }}">{{ .LinkTitle | lower }}</a></li>
+      {{- end }}
+    </ul>
+    {{- end }}
+
+    {{- $desc := cond (ne .Description "") .Description (.Summary | plainify | htmlUnescape) }}
+    {{- with $desc }}
+    <div class="pe-desc">{{ . }}</div>
+    {{- end }}
+  </div>
+
+  {{- with .Params.cover }}
+  {{- with .image }}
+  <div class="pe-thumb">
+    <img src="{{ . | relURL }}" alt="" aria-hidden="true" loading="lazy" width="180" height="180">
+  </div>
+  {{- end }}
+  {{- end }}
+</article>
+{{- end }}
+</div>
+
+{{- if gt $paginator.TotalPages 1 }}
+<footer class="page-footer">
+  <nav class="pagination">
+    {{- if $paginator.HasPrev }}
+    <a class="prev" href="{{ $paginator.Prev.URL | absURL }}">«&nbsp;{{ i18n "prev_page" }}</a>
+    {{- end }}
+    {{- if $paginator.HasNext }}
+    <a class="next" href="{{ $paginator.Next.URL | absURL }}">{{ i18n "next_page" }}&nbsp;»</a>
+    {{- end }}
+  </nav>
+</footer>
+{{- end }}
+
+{{- if $isTerm }}
+{{- $reorder := resources.Get "js/term-origin.js" | minify | fingerprint }}
+<script src="{{ $reorder.RelPermalink }}" integrity="{{ $reorder.Data.Integrity }}" defer></script>
+{{- end }}
+
+{{- end }}{{- /* end main */ -}}

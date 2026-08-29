@@ -20,6 +20,8 @@
   {{- partial "cover.html" (dict "cxt" . "IsSingle" true "isHidden" $isHidden) }}
 
   <div class="post-body-wrap">
+    {{- partial "post_sidebar.html" . }}
+
     <div class="post-content md-content">
       {{- if not (.Param "disableAnchoredHeadings") }}
       {{- partial "anchored_headings.html" .Content -}}

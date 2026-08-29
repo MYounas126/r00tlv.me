@@ -1,0 +1,53 @@
+{{- /* Left sidebar on a single post: profile (not a link), tags, prev/next, back. */ -}}
+{{- $cur := . }}
+{{- $posts := sort (where site.RegularPages "Type" "in" site.Params.mainSections) "Date" "desc" }}
+{{- $i := -1 }}
+{{- range $k, $p := $posts }}
+  {{- if eq $p.RelPermalink $cur.RelPermalink }}{{ $i = $k }}{{ end }}
+{{- end }}
+{{- $newer := false }}{{ if gt $i 0 }}{{ $newer = index $posts (sub $i 1) }}{{ end }}
+{{- $older := false }}{{ if and (ge $i 0) (lt $i (sub (len $posts) 1)) }}{{ $older = index $posts (add $i 1) }}{{ end }}
+
+<aside class="post-side">
+  <div class="ps-profile">
+    {{- with site.Params.avatar }}
+    <img class="ps-avatar" src="{{ . | relURL }}" width="52" height="52" alt="" aria-hidden="true">
+    {{- end }}
+    <div class="ps-who">
+      <span class="ps-name">{{ site.Params.author }}</span>
+      {{- with site.Params.handle }}<span class="ps-handle">{{ . }}</span>{{ end }}
+    </div>
+  </div>
+
+  {{- $tags := $cur.GetTerms "tags" }}
+  {{- with $tags }}
+  <div class="ps-sep"></div>
+  <div class="ps-block">
+    <div class="ps-label">Tags</div>
+    <ul class="ps-tags">
+      {{- range . }}
+      <li><a href="{{ .Permalink }}?from={{ $cur.RelPermalink | urlquery }}">{{ .LinkTitle }}</a></li>
+      {{- end }}
+    </ul>
+  </div>
+  {{- end }}
+
+  {{- if or $older $newer }}
+  <div class="ps-sep"></div>
+  {{- with $older }}
+  <div class="ps-block">
+    <div class="ps-label">Previous article</div>
+    <a class="ps-link" href="{{ .Permalink }}">{{ .Title }}</a>
+  </div>
+  {{- end }}
+  {{- with $newer }}
+  <div class="ps-block">
+    <div class="ps-label">Next article</div>
+    <a class="ps-link" href="{{ .Permalink }}">{{ .Title }}</a>
+  </div>
+  {{- end }}
+  {{- end }}
+
+  <div class="ps-sep"></div>
+  <a class="ps-back" href="{{ "posts/" | relURL }}">&larr; Back to the blog</a>
+</aside>
