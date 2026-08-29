@@ -113,7 +113,7 @@ summaryLength = 30
     url  = "https://www.linkedin.com/in/myounasec/"
   [[params.socialIcons]]
     name = "medium"
-    url  = "https://medium.com/@thehackboy"
+    url  = "https://thehackboy.medium.com/"
   [[params.socialIcons]]
     name = "hackthebox"
     title = "HackTheBox"
