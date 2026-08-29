@@ -8,7 +8,7 @@ locale       = "en-us"
 title        = "Muhammad Younas"
 theme        = "PaperMod"
 
-# Islamabad. Post dates in frontmatter carry +05:00 explicitly.
+# Build-time date handling only. Post dates carry +05:00 explicitly.
 timeZone = "Asia/Karachi"
 
 enableRobotsTXT       = true
