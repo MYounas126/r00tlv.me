@@ -33,6 +33,7 @@ A Cyber Security graduate with an avid interest in breaking and building things.
 
 ## Experience
 
+- **Security Analyst** at VentureDive (June 2026 - Present)
 - **Application Security Analyst** at Next Generation Technologies (October 2025 - May 2026)
 - **Penetration Tester** at Systems Limited (May 2025 - October 2025)
 - **VAPT Intern** at Trillium Information Security Systems (June 2025 - August 2025)
