@@ -38,3 +38,35 @@
    Hidden here only; still used for the post list, OG tags and the search
    index, so SEO is unaffected. */
 .post-single .post-description { display: none; }
+
+/* ---------------- About page identity block ---------------- */
+.about-id { margin: 0 0 28px; }
+.about-id h2 {
+    margin: 0;
+    font-size: 30px;
+    line-height: 1.2;
+    letter-spacing: -0.01em;
+}
+.about-id .about-tagline {
+    margin: 6px 0 0;
+    color: var(--secondary);
+    font-size: 16px;
+}
+.about-id .about-links {
+    margin: 14px 0 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 14px;
+    font-size: 15px;
+}
+.about-id .about-links a {
+    color: var(--accent);
+    text-decoration: none;
+    box-shadow: none;
+}
+.about-id .about-links a:hover {
+    box-shadow: inset 0 -1px 0 var(--accent);
+}
+
+/* Tighten the CV bullet lists so the page scans quickly */
+.post-content ul li { margin-top: 4px; }
