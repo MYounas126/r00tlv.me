@@ -16,6 +16,6 @@ First-generation university student from Tehsil Landikotal, District Khyber, in 
 
 - Email: `muhammadyounas.sec [at] gmail`
 - GitHub: [@MYounas126](https://github.com/MYounas126)
-- LinkedIn: [in/myounas786](https://linkedin.com/in/myounas786)
+- LinkedIn: [in/myounasec](https://www.linkedin.com/in/myounasec/)
 - HackTheBox: [@thehackboy](https://app.hackthebox.com/)
 - Medium: [@thehackboy](https://medium.com/@thehackboy)

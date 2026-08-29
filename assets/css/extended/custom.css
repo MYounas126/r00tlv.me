@@ -28,3 +28,13 @@
 
 /* Inline code: keep it monospace and quiet, not accent-coloured */
 .post-content code { font-size: 0.92em; }
+
+/* PaperMod's stock tag-chip colour is 4.25:1 against the chip background,
+   just under the WCAG AA threshold of 4.5:1. Nudged to 5.26:1. */
+[data-theme="dark"] .post-tags a,
+[data-theme="dark"] .terms-tags a { color: #adaeb0; }
+
+/* On a single post the description repeats the opening paragraph verbatim.
+   Hidden here only; still used for the post list, OG tags and the search
+   index, so SEO is unaffected. */
+.post-single .post-description { display: none; }
