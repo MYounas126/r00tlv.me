@@ -5,7 +5,7 @@
 
 baseURL      = "https://r00tlvr.me/"
 locale       = "en-us"
-title        = "Muhammad Younas"
+title        = "r00t.lvr"
 theme        = "PaperMod"
 
 # Build-time date handling only. Post dates carry +05:00 explicitly.
@@ -42,27 +42,22 @@ summaryLength = 30
 [menu]
   [[menu.main]]
     identifier = "posts"
-    name       = "posts"
+    name       = "Posts"
     url        = "/posts/"
     weight     = 10
   [[menu.main]]
     identifier = "categories"
-    name       = "categories"
+    name       = "Categories"
     url        = "/categories/"
     weight     = 20
   [[menu.main]]
     identifier = "tags"
-    name       = "tags"
+    name       = "Tags"
     url        = "/tags/"
     weight     = 30
   [[menu.main]]
-    identifier = "search"
-    name       = "search"
-    url        = "/search/"
-    weight     = 40
-  [[menu.main]]
     identifier = "about"
-    name       = "about"
+    name       = "About"
     url        = "/about/"
     weight     = 50
 
@@ -72,8 +67,10 @@ summaryLength = 30
   mainSections = ["posts"]
   avatar      = "/img/avatar.png"
   handle      = "@r00t.lvr"
-  author      = "Muhammad Younas"
-  description = "Writeups on web, mobile and container security by Muhammad Younas. Occasional reverse engineering and pwn.college notes."
+  author      = "r00t.lvr"
+  realName    = "Muhammad Younas"   # About page + post sidebar only
+  hideAuthor  = true                # post byline shows the date only
+  description = "Writeups on web, mobile and container security. Occasional reverse engineering and pwn.college notes."
   keywords    = ["security", "appsec", "web security", "mobile security", "container security", "reverse engineering", "hackthebox"]
 
   # Dark by default, toggle available, choice persisted in localStorage
@@ -100,7 +97,7 @@ summaryLength = 30
   disableSpecial1stPost = true
 
   [params.label]
-    text = "Muhammad Younas"
+    text = "r00t.lvr"
 
   [params.homeInfoParams]
     Title   = ""

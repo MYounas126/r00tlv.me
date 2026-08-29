@@ -31,7 +31,10 @@
     {{- if $hasToc }}
     <aside class="toc-side">
       <details class="toc-box" id="toc-box" open>
-        <summary class="toc-summary">Table of Contents</summary>
+        <summary class="toc-summary">
+          <span class="toc-label-wide">{{ .Title }}</span>
+          <span class="toc-label-narrow">Table of Contents</span>
+        </summary>
         <div class="toc-nav" id="toc">
           {{ .TableOfContents }}
         </div>

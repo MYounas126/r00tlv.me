@@ -1,8 +1,8 @@
 /* Scroll-spy for the post table of contents.
-   Marks the heading the reader is currently inside, the way bootstrap-toc
-   does on 0xdf. Plain scroll maths rather than IntersectionObserver: it
-   stays correct for headings taller than the viewport and when several
-   headings share one screen. */
+
+   Mirrors bootstrap-toc (what 0xdf uses): sub-headings stay hidden until the
+   reader is inside their parent section, then that branch expands. The active
+   heading and every ancestor on its path are highlighted. */
 (function () {
   var toc = document.getElementById('toc');
   if (!toc) return;
@@ -14,23 +14,45 @@
       var id;
       try { id = decodeURIComponent(a.getAttribute('href').slice(1)); }
       catch (e) { id = a.getAttribute('href').slice(1); }
-      return { link: a, el: document.getElementById(id) };
+      return { link: a, li: a.parentElement, el: document.getElementById(id) };
     })
-    .filter(function (i) { return i.el; });
+    .filter(function (i) { return i.el && i.li; });
 
   if (!items.length) return;
 
-  var OFFSET = 110;          // a heading counts as current once within this of the top
+  var OFFSET = 110;
   var current = null;
   var ticking = false;
 
+  function clear() {
+    var i, n;
+    n = toc.querySelectorAll('a.active, a.in-path');
+    for (i = 0; i < n.length; i++) n[i].classList.remove('active', 'in-path');
+    n = toc.querySelectorAll('li.expanded');
+    for (i = 0; i < n.length; i++) n[i].classList.remove('expanded');
+  }
+
   function apply(found) {
     if (found === current) return;
-    if (current) current.link.classList.remove('active');
+    clear();
     found.link.classList.add('active');
+
+    // expand this branch and mark every ancestor on the path
+    var li = found.li;
+    while (li && toc.contains(li)) {
+      li.classList.add('expanded');
+      var parentList = li.parentElement;                 // the <ul>
+      var parentLi = parentList && parentList.parentElement;
+      if (parentLi && parentLi.tagName === 'LI' && toc.contains(parentLi)) {
+        var pa = parentLi.querySelector('a');
+        if (pa && pa !== found.link) pa.classList.add('in-path');
+        li = parentLi;
+      } else {
+        li = null;
+      }
+    }
     current = found;
 
-    // keep the active entry in view if the TOC itself is scrolling
     if (toc.scrollHeight > toc.clientHeight + 4) {
       var lt = found.link.offsetTop, lh = found.link.offsetHeight;
       if (lt < toc.scrollTop) toc.scrollTop = lt - 8;
@@ -47,10 +69,10 @@
       if (items[i].el.getBoundingClientRect().top <= OFFSET) found = items[i];
       else break;
     }
-    // at the very bottom of the page the last section is the one being read
-    var atEnd = window.innerHeight + window.scrollY >=
-                document.documentElement.scrollHeight - 2;
-    if (atEnd) found = items[items.length - 1];
+    if (window.innerHeight + window.scrollY >=
+        document.documentElement.scrollHeight - 2) {
+      found = items[items.length - 1];
+    }
     apply(found);
   }
 
@@ -61,15 +83,12 @@
   window.addEventListener('scroll', onScroll, { passive: true });
   window.addEventListener('resize', onScroll, { passive: true });
 
-  // collapsed on narrow screens, always open on desktop
   if (box) {
-    var mq = window.matchMedia('(min-width: 1100px)');
+    var mq = window.matchMedia('(min-width: 1000px)');
     function syncBox(e) { box.open = (e || mq).matches; }
     syncBox();
     if (mq.addEventListener) mq.addEventListener('change', syncBox);
     else if (mq.addListener) mq.addListener(syncBox);
-
-    // tapping a link on mobile should close the drawer
     toc.addEventListener('click', function (ev) {
       if (ev.target.tagName === 'A' && !mq.matches) box.open = false;
     });

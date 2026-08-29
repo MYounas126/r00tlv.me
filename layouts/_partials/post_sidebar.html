@@ -14,7 +14,7 @@
     <img class="ps-avatar" src="{{ . | relURL }}" width="52" height="52" alt="" aria-hidden="true">
     {{- end }}
     <div class="ps-who">
-      <span class="ps-name">{{ site.Params.author }}</span>
+      <span class="ps-name">{{ site.Params.realName | default site.Params.author }}</span>
       {{- with site.Params.handle }}<span class="ps-handle">{{ . }}</span>{{ end }}
     </div>
   </div>
