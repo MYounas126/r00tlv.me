@@ -1,25 +1,24 @@
 ---
 title: "About"
 url: "/about/"
+layout: "about"
 summary: "Muhammad Younas — security researcher. Web, mobile and container security."
 description: "Muhammad Younas — security researcher. Web, mobile and container security, moving into reverse engineering and low-level exploitation."
 ShowToc: false
 ShowBreadCrumbs: false
 hidemeta: true
 hiddenInRss: true
----
 
-<div class="about-id">
-  <h2>Muhammad Younas</h2>
-  <p class="about-tagline">A Security Researcher &amp; Penetration Tester</p>
-  <p class="about-links">
-    <a href="mailto:muhammadyounas.sec@gmail.com">mail</a>
-    <a href="https://github.com/MYounas126">github</a>
-    <a href="https://www.linkedin.com/in/myounasec/">linkedin</a>
-    <a href="https://medium.com/@thehackboy">medium</a>
-    <a href="https://app.hackthebox.com/">hackthebox</a>
-  </p>
-</div>
+name: "Muhammad Younas"
+tagline: "A Security Researcher & Penetration Tester"
+avatar: "/img/avatar.png"
+links:
+  - { name: "email",      title: "Email",      url: "mailto:muhammadyounas.sec@gmail.com" }
+  - { name: "github",     title: "GitHub",     url: "https://github.com/MYounas126" }
+  - { name: "linkedin",   title: "LinkedIn",   url: "https://www.linkedin.com/in/myounasec/" }
+  - { name: "medium",     title: "Medium",     url: "https://medium.com/@thehackboy" }
+  - { name: "hackthebox", title: "HackTheBox", url: "https://app.hackthebox.com/" }
+---
 
 ## 👋 I'm Muhammad Younas a.k.a r00t.lvr ⚡
 

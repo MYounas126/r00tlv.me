@@ -1,0 +1,36 @@
+{{- define "main" }}
+
+<article class="post-single about-page">
+  <header class="post-header">
+    <h1 class="post-title">{{ .Title }}</h1>
+  </header>
+
+  <hr class="about-rule">
+
+  <div class="about-wrap">
+    <aside class="about-side">
+      {{- with .Params.avatar }}
+      <img class="about-avatar" src="{{ . | relURL }}" width="200" height="200"
+           alt="{{ $.Params.name | default site.Params.author }}">
+      {{- end }}
+      <h2 class="about-name">{{ .Params.name | default site.Params.author }}</h2>
+      {{- with .Params.tagline }}
+      <p class="about-tagline">{{ . }}</p>
+      {{- end }}
+      <div class="about-icons">
+        {{- range .Params.links }}
+        <a href="{{ .url | safeURL }}" title="{{ .title }}" aria-label="{{ .title }}"
+           {{- if not (strings.HasPrefix .url "mailto:") }} target="_blank" rel="noopener noreferrer me"{{ end }}>
+          {{- partial "svg.html" (dict "name" .name) -}}
+        </a>
+        {{- end }}
+      </div>
+    </aside>
+
+    <div class="about-main post-content md-content">
+      {{ .Content }}
+    </div>
+  </div>
+</article>
+
+{{- end }}{{/* end main */}}

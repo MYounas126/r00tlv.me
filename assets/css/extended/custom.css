@@ -39,34 +39,73 @@
    index, so SEO is unaffected. */
 .post-single .post-description { display: none; }
 
-/* ---------------- About page identity block ---------------- */
-.about-id { margin: 0 0 28px; }
-.about-id h2 {
-    margin: 0;
-    font-size: 30px;
-    line-height: 1.2;
-    letter-spacing: -0.01em;
-}
-.about-id .about-tagline {
-    margin: 6px 0 0;
-    color: var(--secondary);
-    font-size: 16px;
-}
-.about-id .about-links {
-    margin: 14px 0 0;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px 14px;
-    font-size: 15px;
-}
-.about-id .about-links a {
-    color: var(--accent);
-    text-decoration: none;
-    box-shadow: none;
-}
-.about-id .about-links a:hover {
-    box-shadow: inset 0 -1px 0 var(--accent);
+/* ------------------- About page: two-column ------------------- */
+.about-page .post-header { margin-bottom: 0; }
+
+.about-rule {
+    border: 0;
+    border-top: 1px solid var(--border);
+    margin: 20px 0 40px;
 }
 
+.about-wrap {
+    display: grid;
+    grid-template-columns: 220px minmax(0, 1fr);
+    gap: 56px;
+    align-items: start;
+}
+
+.about-side { text-align: center; }
+
+.about-avatar {
+    width: 200px;
+    height: 200px;
+    border-radius: 50%;
+    object-fit: cover;
+    display: block;
+    margin: 0 auto 18px;
+}
+
+.about-name {
+    margin: 0 0 4px;
+    font-size: 22px;
+    line-height: 1.25;
+}
+
+.about-tagline {
+    margin: 0 0 18px;
+    color: var(--secondary);
+    font-size: 15px;
+    line-height: 1.4;
+}
+
+.about-icons {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 16px;
+}
+.about-icons a {
+    display: inline-flex;
+    color: var(--primary);
+}
+.about-icons a:hover { color: var(--accent); }
+.about-icons svg { width: 26px; height: 26px; }
+
+/* first heading in the right column should align with the avatar top */
+.about-main > :first-child { margin-top: 0; }
+
 /* Tighten the CV bullet lists so the page scans quickly */
-.post-content ul li { margin-top: 4px; }
+.about-main ul li { margin-top: 4px; }
+
+@media screen and (max-width: 768px) {
+    .about-wrap {
+        grid-template-columns: 1fr;
+        gap: 32px;
+    }
+    .about-icons { gap: 22px; }
+}
+
+/* The About page carries a sidebar, so it needs more room than the
+   720px reading measure used for posts. */
+.main:has(.about-page) { max-width: 1040px; }
