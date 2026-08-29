@@ -1,0 +1,61 @@
+{{- define "main" }}
+
+{{- $hasToc := and (.Param "ShowToc") (gt (len .TableOfContents) 60) }}
+
+<article class="post-single {{ if $hasToc }}has-toc{{ end }}">
+  <header class="post-header">
+    {{ partial "breadcrumbs.html" . }}
+    <h1 class="post-title entry-hint-parent">{{ .Title }}</h1>
+    {{- if not (.Param "hideMeta") }}
+    <div class="post-meta">
+      {{- partial "post_meta.html" . -}}
+      {{- partial "translation_list.html" . -}}
+      {{- partial "edit_post.html" . -}}
+      {{- partial "post_canonical.html" . -}}
+    </div>
+    {{- end }}
+  </header>
+
+  {{- $isHidden := (.Param "cover.hiddenInSingle") | default (.Param "cover.hidden") | default false }}
+  {{- partial "cover.html" (dict "cxt" . "IsSingle" true "isHidden" $isHidden) }}
+
+  <div class="post-body-wrap">
+    <div class="post-content md-content">
+      {{- if not (.Param "disableAnchoredHeadings") }}
+      {{- partial "anchored_headings.html" .Content -}}
+      {{- else }}{{ .Content }}{{ end }}
+    </div>
+
+    {{- if $hasToc }}
+    <aside class="toc-side">
+      <details class="toc-box" id="toc-box" open>
+        <summary class="toc-summary">Table of Contents</summary>
+        <div class="toc-nav" id="toc">
+          {{ .TableOfContents }}
+        </div>
+      </details>
+    </aside>
+    {{- end }}
+  </div>
+
+  {{- partial "extend_post_content.html" . }}
+
+  <footer class="post-footer">
+    {{- $tags := .Language.Params.Taxonomies.tag | default "tags" }}
+    <ul class="post-tags">
+      {{- range ($.GetTerms $tags) }}
+      <li><a href="{{ .Permalink }}">{{ .LinkTitle }}</a></li>
+      {{- end }}
+    </ul>
+    {{- if (.Param "ShowPostNavLinks") }}
+    {{- partial "post_nav_links.html" . }}
+    {{- end }}
+  </footer>
+</article>
+
+{{- if $hasToc }}
+{{- $spy := resources.Get "js/toc-spy.js" | minify | fingerprint }}
+<script src="{{ $spy.RelPermalink }}" integrity="{{ $spy.Data.Integrity }}" defer></script>
+{{- end }}
+
+{{- end }}{{/* end main */}}

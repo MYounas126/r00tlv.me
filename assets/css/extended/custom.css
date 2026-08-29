@@ -109,3 +109,115 @@
 /* The About page carries a sidebar, so it needs more room than the
    720px reading measure used for posts. */
 .main:has(.about-page) { max-width: 1040px; }
+
+/* ------------------- Post: right-hand sticky TOC ------------------- */
+.main:has(.post-single.has-toc) { max-width: 1060px; }
+
+.post-single.has-toc .post-header,
+.post-single.has-toc .post-footer { max-width: 720px; }
+
+.post-body-wrap {
+    display: grid;
+    grid-template-columns: minmax(0, 720px) 236px;
+    gap: 56px;
+    align-items: start;
+}
+
+.toc-side {
+    position: sticky;
+    top: 72px;
+}
+
+.toc-box { border: 0; }
+
+.toc-summary {
+    font-size: 13px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--secondary);
+    margin-bottom: 10px;
+    cursor: default;
+    list-style: none;
+}
+.toc-summary::-webkit-details-marker { display: none; }
+
+.toc-nav {
+    max-height: calc(100vh - 150px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+}
+
+.toc-nav nav > ul { margin: 0; padding: 0; }
+.toc-nav ul { list-style: none; margin: 0; padding: 0; }
+.toc-nav li { margin: 0; }
+
+.toc-nav a {
+    display: block;
+    padding: 5px 0 5px 14px;
+    margin-left: -2px;
+    border-left: 2px solid var(--border);
+    color: var(--secondary);
+    font-size: 14px;
+    line-height: 1.35;
+    text-decoration: none;
+    box-shadow: none;
+    transition: color .12s ease, border-color .12s ease;
+}
+.toc-nav a:hover {
+    color: var(--primary);
+    border-left-color: var(--secondary);
+}
+/* the heading the reader is currently inside */
+.toc-nav a.active {
+    color: var(--accent);
+    border-left-color: var(--accent);
+    font-weight: 600;
+}
+
+/* nested levels (h3/h4) sit tighter and smaller */
+.toc-nav ul ul a {
+    padding-left: 26px;
+    font-size: 13px;
+}
+.toc-nav ul ul ul a { padding-left: 38px; }
+
+/* ---- narrow: TOC collapses and moves above the post ---- */
+@media screen and (max-width: 1100px) {
+    .main:has(.post-single.has-toc) { max-width: var(--main-width); }
+    .post-body-wrap {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 0;
+    }
+    .toc-side {
+        position: static;
+        order: -1;
+        margin-bottom: 28px;
+    }
+    .toc-box {
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 10px 14px;
+    }
+    .toc-summary {
+        cursor: pointer;
+        margin-bottom: 0;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    /* tap affordance - the marker is hidden, so draw our own */
+    .toc-summary::after {
+        content: "";
+        width: 8px;
+        height: 8px;
+        border-right: 2px solid currentColor;
+        border-bottom: 2px solid currentColor;
+        transform: rotate(45deg) translate(-2px, -2px);
+        transition: transform .15s ease;
+    }
+    .toc-box[open] .toc-summary::after {
+        transform: rotate(-135deg) translate(-2px, -2px);
+    }
+    .toc-box[open] .toc-summary { margin-bottom: 10px; }
+    .toc-nav { max-height: none; }
+}
