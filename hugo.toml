@@ -1,0 +1,147 @@
+# ---------------------------------------------------------------
+# Hugo + PaperMod configuration
+# Ported from Blog/_config.yml (Chirpy) in the Obsidian vault.
+# ---------------------------------------------------------------
+
+baseURL      = "https://r00tlvr.me/"
+locale       = "en-us"
+title        = "Muhammad Younas"
+theme        = "PaperMod"
+
+# Islamabad. Post dates in frontmatter carry +05:00 explicitly.
+timeZone = "Asia/Karachi"
+
+enableRobotsTXT       = true
+enableInlineShortcodes = true
+enableEmoji           = false
+buildDrafts           = false
+buildFuture           = false
+buildExpired          = false
+pygmentsUseClasses    = true
+
+summaryLength = 30
+
+[pagination]
+  pagerSize = 10
+
+# RSS at /rss.xml rather than Hugo's default /index.xml
+[outputFormats]
+  [outputFormats.RSS]
+    mediaType = "application/rss+xml"
+    baseName  = "rss"
+
+# JSON output on the home page feeds the Fuse.js client-side search index
+[outputs]
+  home = ["HTML", "RSS", "JSON"]
+
+[taxonomies]
+  category = "categories"
+  tag      = "tags"
+
+# ------------------------------ menu ------------------------------
+[menu]
+  [[menu.main]]
+    identifier = "posts"
+    name       = "posts"
+    url        = "/posts/"
+    weight     = 10
+  [[menu.main]]
+    identifier = "categories"
+    name       = "categories"
+    url        = "/categories/"
+    weight     = 20
+  [[menu.main]]
+    identifier = "tags"
+    name       = "tags"
+    url        = "/tags/"
+    weight     = 30
+  [[menu.main]]
+    identifier = "search"
+    name       = "search"
+    url        = "/search/"
+    weight     = 40
+  [[menu.main]]
+    identifier = "about"
+    name       = "about"
+    url        = "/about/"
+    weight     = 50
+
+# ----------------------------- params -----------------------------
+[params]
+  env         = "production"
+  author      = "Muhammad Younas"
+  description = "Writeups on web, mobile and container security by Muhammad Younas. Occasional reverse engineering and pwn.college notes."
+  keywords    = ["security", "appsec", "web security", "mobile security", "container security", "reverse engineering", "hackthebox"]
+
+  # Dark by default, toggle available, choice persisted in localStorage
+  defaultTheme       = "dark"
+  disableThemeToggle = false
+
+  # Reading affordances the posts actually need
+  ShowToc              = true
+  TocOpen              = false
+  ShowCodeCopyButtons  = true
+  ShowPostNavLinks     = true
+  ShowBreadCrumbs      = true
+  ShowRssButtonInSectionTermList = true
+  ShowAllPagesInArchive = true
+
+  # Deliberately off: magazine furniture, per the design constraints
+  ShowReadingTime  = false
+  ShowWordCount    = false
+  ShowShareButtons = false
+  comments         = false
+  hidemeta         = false
+  showtoc          = true
+  disableScrollToTop = false
+  disableSpecial1stPost = true
+
+  [params.label]
+    text = "Muhammad Younas"
+
+  [params.homeInfoParams]
+    Title   = ""
+    Content = ""
+
+  [[params.socialIcons]]
+    name = "github"
+    url  = "https://github.com/MYounas126"
+  [[params.socialIcons]]
+    name = "linkedin"
+    url  = "https://linkedin.com/in/myounas786"
+  [[params.socialIcons]]
+    name = "medium"
+    url  = "https://medium.com/@thehackboy"
+  [[params.socialIcons]]
+    name = "hackthebox"
+    url  = "https://app.hackthebox.com/"
+  [[params.socialIcons]]
+    name = "email"
+    url  = "mailto:muhammadyounas.sec@gmail.com"
+  [[params.socialIcons]]
+    name = "rss"
+    url  = "/rss.xml"
+
+  [params.fuseOpts]
+    isCaseSensitive       = false
+    shouldSort            = true
+    location              = 0
+    distance              = 1000
+    threshold             = 0.4
+    minMatchCharLength    = 0
+    keys                  = ["title", "permalink", "summary", "content"]
+
+# ---------------------------- markup ------------------------------
+[markup]
+  [markup.highlight]
+    noClasses   = false      # emit CSS classes so PaperMod's chroma theme applies
+    codeFences  = true
+    guessSyntax = true
+    lineNos     = false      # off: line-number tables break copy-paste and mobile width
+    tabWidth    = 4
+  [markup.goldmark.renderer]
+    unsafe = true
+  [markup.tableOfContents]
+    startLevel = 2
+    endLevel   = 4
+    ordered    = false

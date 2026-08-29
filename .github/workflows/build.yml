@@ -1,0 +1,59 @@
+name: build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      HUGO_VERSION: 0.165.0
+    steps:
+      - name: Checkout (with theme submodule)
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Install Hugo ${{ env.HUGO_VERSION }} (extended)
+        run: |
+          wget -q -O hugo.deb \
+            "https://github.com/gohugoio/hugo/releases/download/v${HUGO_VERSION}/hugo_extended_${HUGO_VERSION}_linux-amd64.deb"
+          sudo dpkg -i hugo.deb
+          hugo version
+
+      - name: Build
+        run: hugo --gc --minify --baseURL "https://r00tlvr.me/"
+
+      - name: Assert the site actually produced what it should
+        run: |
+          set -e
+          for f in \
+            public/index.html \
+            public/posts/anatomy-of-ghsa-x24x-425w-326q/index.html \
+            public/about/index.html \
+            public/search/index.html \
+            public/tags/index.html \
+            public/categories/index.html \
+            public/rss.xml \
+            public/index.json \
+            public/sitemap.xml
+          do
+            [ -s "$f" ] || { echo "MISSING or empty: $f"; exit 1; }
+            echo "ok: $f"
+          done
+          # RSS must be well-formed and must not contain the About page
+          python3 -c "
+          import xml.etree.ElementTree as ET, sys
+          ch = ET.parse('public/rss.xml').getroot().find('channel')
+          titles = [i.find('title').text for i in ch.findall('item')]
+          assert titles, 'RSS has no items'
+          assert 'About' not in titles, 'About page leaked into RSS'
+          print('ok: rss.xml valid,', len(titles), 'item(s)')
+          "
