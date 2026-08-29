@@ -96,6 +96,11 @@ summaryLength = 30
   disableScrollToTop = false
   disableSpecial1stPost = true
 
+  # cover images are list thumbnails only - no hero image on the post itself
+  [params.cover]
+    hiddenInSingle = true
+    hiddenInList   = false
+
   [params.label]
     text = "r00t.lvr"
 
