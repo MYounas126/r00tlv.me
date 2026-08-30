@@ -31,12 +31,26 @@ jobs:
       - name: Build
         run: hugo --gc --minify --baseURL "https://r00tlv.me/"
 
+      - name: Guard against a missing theme submodule
+        run: |
+          set -e
+          # Hugo exits 0 with no theme and silently emits a site with no
+          # homepage, so this has to be checked explicitly.
+          if [ ! -f themes/PaperMod/theme.toml ]; then
+            echo "theme submodule not checked out - themes/PaperMod is empty"
+            exit 1
+          fi
+          echo "ok: theme present at $(git -C themes/PaperMod rev-parse --short HEAD)"
+
       - name: Assert the site actually produced what it should
         run: |
           set -e
           for f in \
             public/index.html \
-            public/posts/anatomy-of-ghsa-x24x-425w-326q/index.html \
+            public/posts/index.html \
+            public/posts/acode-cross-app-scripting-what-i-found/index.html \
+            public/posts/acode-cross-app-scripting-how-i-found-it/index.html \
+            public/posts/acode-cross-app-scripting-how-to-prevent-it/index.html \
             public/about/index.html \
             public/search/index.html \
             public/tags/index.html \
@@ -48,9 +62,21 @@ jobs:
             [ -s "$f" ] || { echo "MISSING or empty: $f"; exit 1; }
             echo "ok: $f"
           done
-          # RSS must be well-formed and must not contain the About page
+
+          # a themeless build still writes some files, so check the homepage
+          # is a real page rather than a stub
+          bytes=$(wc -c < public/index.html)
+          [ "$bytes" -gt 3000 ] || { echo "index.html only $bytes bytes - theme likely missing"; exit 1; }
+          echo "ok: index.html is $bytes bytes"
+
+          # the old URL must keep redirecting
+          grep -q "acode-cross-app-scripting-what-i-found" \
+            public/posts/anatomy-of-ghsa-x24x-425w-326q/index.html \
+            || { echo "alias redirect broken"; exit 1; }
+          echo "ok: legacy URL still redirects"
+
           python3 -c "
-          import xml.etree.ElementTree as ET, sys
+          import xml.etree.ElementTree as ET
           ch = ET.parse('public/rss.xml').getroot().find('channel')
           titles = [i.find('title').text for i in ch.findall('item')]
           assert titles, 'RSS has no items'
