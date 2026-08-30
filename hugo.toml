@@ -5,7 +5,7 @@
 
 baseURL      = "https://r00tlv.me/"
 locale       = "en-us"
-title        = "r00t.lvr"
+title        = "r00tlv"
 theme        = "PaperMod"
 
 # Build-time date handling only. Post dates carry +05:00 explicitly.
@@ -66,8 +66,8 @@ summaryLength = 30
   env         = "production"
   mainSections = ["posts"]
   avatar      = "/img/avatar.png"
-  handle      = "@r00t.lvr"
-  author      = "r00t.lvr"
+  handle      = "@r00tlv"
+  author      = "r00tlv"
   realName    = "Muhammad Younas"   # About page + post sidebar only
   hideAuthor  = true                # post byline shows the date only
   description = "Writeups on web, mobile and container security. Occasional reverse engineering and pwn.college notes."
@@ -102,7 +102,7 @@ summaryLength = 30
     hiddenInList   = false
 
   [params.label]
-    text = "r00t.lvr"
+    text = "r00tlv"
 
   [params.homeInfoParams]
     Title   = ""
