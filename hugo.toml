@@ -3,7 +3,7 @@
 # Ported from Blog/_config.yml (Chirpy) in the Obsidian vault.
 # ---------------------------------------------------------------
 
-baseURL      = "https://r00tlvr.me/"
+baseURL      = "https://r00tlv.me/"
 locale       = "en-us"
 title        = "r00t.lvr"
 theme        = "PaperMod"

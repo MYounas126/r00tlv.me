@@ -1,6 +1,6 @@
-# r00tlvr.me
+# r00tlv.me
 
-Source for [r00tlvr.me](https://r00tlvr.me) — writeups on web, mobile and
+Source for [r00tlv.me](https://r00tlv.me) — writeups on web, mobile and
 container security by Muhammad Younas.
 
 Hugo + [PaperMod](https://github.com/adityatelange/hugo-PaperMod), deployed to

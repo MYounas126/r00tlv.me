@@ -1,4 +1,4 @@
-# Setup — Hugo + PaperMod → Cloudflare Pages → r00tlvr.me
+# Setup — Hugo + PaperMod → Cloudflare Pages → r00tlv.me
 
 Supersedes the Chirpy/Jekyll runbook in the Obsidian vault. Three things in
 that version were wrong and are corrected here:
@@ -7,7 +7,7 @@ that version were wrong and are corrected here:
    come from **Name.com**, **Namecheap** (`.me`) and **.TECH**.
 2. Hosting is **Cloudflare Pages**, so the GitHub Pages `185.199.x.x`
    A records do not apply.
-3. `.dev` is not being used. The domain is **r00tlvr.me**.
+3. `.dev` is not being used. The domain is **r00tlv.me**.
 
 ## Prerequisites
 
@@ -67,7 +67,7 @@ hiddenInRss: true                 # optional: keep a page out of the feed
 
 1. Sign in to the Student Pack: https://education.github.com/pack
 2. Find the **Namecheap** offer — free `.me` registration for 1 year.
-3. Register **r00tlvr.me**.
+3. Register **r00tlv.me**.
 
 (Name.com's offer covers 25+ extensions including `.app`, `.live`, `.studio`
 if you ever want a second one. .TECH gives a free `.tech`.)
@@ -100,13 +100,13 @@ because `.gitmodules` uses an HTTPS URL.
 
 ## Step 4 — Point the domain at Cloudflare
 
-1. Cloudflare dash → **Add a site** → `r00tlvr.me` → Free plan.
+1. Cloudflare dash → **Add a site** → `r00tlv.me` → Free plan.
 2. Cloudflare gives you two nameservers.
 3. Namecheap → Domain List → Manage → **Nameservers** → *Custom DNS* →
    paste both Cloudflare nameservers → save.
 4. Wait for Cloudflare to report the zone as active (usually minutes,
    occasionally a few hours).
-5. Pages project → **Custom domains** → add `r00tlvr.me` and `www.r00tlvr.me`.
+5. Pages project → **Custom domains** → add `r00tlv.me` and `www.r00tlv.me`.
    Cloudflare creates the DNS records itself — you do not add A records.
 
 ## Step 5 — HTTPS
@@ -117,24 +117,24 @@ within 15 minutes. Then set SSL/TLS mode to **Full (strict)**.
 Verify:
 
 ```bash
-curl -sI https://r00tlvr.me/ | head -1
-curl -s  https://r00tlvr.me/rss.xml | head -5
+curl -sI https://r00tlv.me/ | head -1
+curl -s  https://r00tlv.me/rss.xml | head -5
 ```
 
 ## Step 6 — Medium canonicals
 
 For each of the six imported articles, on Medium:
-Story Settings → Advanced → Custom canonical URL → the new r00tlvr.me URL.
+Story Settings → Advanced → Custom canonical URL → the new r00tlv.me URL.
 Do not delete the Medium posts.
 
 ## Verify
 
-- `https://r00tlvr.me/` — post list
-- `https://r00tlvr.me/posts/anatomy-of-ghsa-x24x-425w-326q/` — GHSA writeup
-- `https://r00tlvr.me/about/`
-- `https://r00tlvr.me/rss.xml`
-- `https://r00tlvr.me/search/`
-- `https://r00tlvr.me/tags/` and `/categories/`
+- `https://r00tlv.me/` — post list
+- `https://r00tlv.me/posts/anatomy-of-ghsa-x24x-425w-326q/` — GHSA writeup
+- `https://r00tlv.me/about/`
+- `https://r00tlv.me/rss.xml`
+- `https://r00tlv.me/search/`
+- `https://r00tlv.me/tags/` and `/categories/`
 
 ## Troubleshooting
 

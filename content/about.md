@@ -2,8 +2,8 @@
 title: "About"
 url: "/about/"
 layout: "about"
-summary: "Muhammad Younas — security researcher. Web, mobile and container security."
-description: "Muhammad Younas — security researcher. Web, mobile and container security, moving into reverse engineering and low-level exploitation."
+summary: "Muhammad Younas, security researcher. Web, mobile and container security."
+description: "Muhammad Younas, security researcher. Web, mobile and container security, moving into reverse engineering and low-level exploitation."
 ShowToc: false
 ShowBreadCrumbs: false
 hidemeta: true

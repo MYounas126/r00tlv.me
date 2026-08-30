@@ -244,8 +244,10 @@
 
 .pe-thumb img {
     width: 150px; height: 150px;
-    object-fit: cover;
+    object-fit: contain;      /* logos must not be cropped */
+    padding: 14px;
     border-radius: var(--radius);
+    background: var(--code-bg);
     display: block;
 }
 
