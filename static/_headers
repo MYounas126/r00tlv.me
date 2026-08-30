@@ -5,6 +5,11 @@
   Cross-Origin-Opener-Policy: same-origin
   Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://r00tlv.me; font-src 'self'; connect-src 'self'; form-action 'none'; frame-ancestors 'none'; base-uri 'self'; object-src 'none'; upgrade-insecure-requests
 
+# Browsers only apply an XSLT stylesheet when it is served as XML
+/rss-style.xsl
+  Content-Type: text/xsl; charset=utf-8
+  Cache-Control: public, max-age=86400
+
 # Fingerprinted assets never change under the same name
 /assets/*
   Cache-Control: public, max-age=31536000, immutable
