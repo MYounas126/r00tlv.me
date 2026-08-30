@@ -101,6 +101,11 @@ summaryLength = 30
     hiddenInSingle = true
     hiddenInList   = false
 
+  # Footer links. Rendered as markdown, so a support link can be appended
+  # here later without touching any template.
+  [params.footer]
+    text = "[RSS](/rss.xml)"
+
   [params.label]
     text = "r00tlv"
 
