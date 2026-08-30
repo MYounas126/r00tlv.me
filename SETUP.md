@@ -83,18 +83,22 @@ The theme is a submodule, so anyone cloning needs
 `git clone --recurse-submodules`. Cloudflare handles this automatically
 because `.gitmodules` uses an HTTPS URL.
 
-## Step 3, Cloudflare Pages
+## Step 3, Cloudflare Workers
 
-1. https://dash.cloudflare.com, **Workers & Pages**, **Create**, **Pages**,
-   **Connect to Git**, pick `MYounas126/r00tlv.me`.
+Cloudflare now routes new projects through the **Workers** flow, not Pages.
+
+1. https://dash.cloudflare.com, **Workers & Pages**, **Create**, **Connect to Git**,
+   pick `MYounas126/r00tlv.me`.
 2. Build settings:
 
    | Field | Value |
    |---|---|
-   | Framework preset | Hugo |
    | Build command | `hugo --gc --minify` |
-   | Build output directory | `public` |
-   | Root directory | *(leave blank)* |
+   | Deploy command | `npx wrangler deploy` |
+   | Root directory (Path) | `/` |
+
+   The deploy command reads `wrangler.jsonc` at the repo root, which serves
+   `./public` as an assets-only Worker and falls back to Hugo's 404.html.
 
 3. Environment variable, **required**:
 
@@ -147,6 +151,19 @@ Verify:
 curl -sI https://r00tlv.me/ | head -1
 curl -s  https://r00tlv.me/rss.xml | head -5
 ```
+
+## Step 5b, Harden TLS
+
+Verified settings on this zone:
+
+- SSL/TLS, **Edge Certificates**, **Always Use HTTPS** ON (http returns 301)
+- **HSTS** enabled: max-age 6 months, includeSubDomains ON, preload OFF
+- **Minimum TLS Version** raised to 1.2 (1.0 and 1.1 now rejected)
+- **Certificate Transparency Monitoring** ON
+- SSL mode can stay **Full**. With a Worker there is no origin hop, so
+  Full vs Full (strict) makes no difference here.
+- Turn **Web Analytics** off: it injects a beacon script the CSP blocks,
+  and this site runs no analytics by design.
 
 ## Step 6, Medium canonicals
 
