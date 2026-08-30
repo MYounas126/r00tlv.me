@@ -19,3 +19,15 @@ hugo new content posts/slug.md --kind htb        # or: research, notes
 ```
 
 See [SETUP.md](SETUP.md) for deployment, DNS and the writing workflow.
+
+## Publishing
+
+Push to `main` and Cloudflare Workers Builds runs `hugo --gc --minify` then
+`npx wrangler deploy`.
+
+If a push ever fails to trigger a build, publish directly instead:
+
+```bash
+npx wrangler login          # one-time
+hugo --gc --minify && npx wrangler deploy
+```
