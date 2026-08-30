@@ -1,4 +1,4 @@
-# Setup — Hugo + PaperMod → Cloudflare Pages → r00tlv.me
+# Setup, Hugo + PaperMod → Cloudflare Pages → r00tlv.me
 
 Supersedes the Chirpy/Jekyll runbook in the Obsidian vault. Three things in
 that version were wrong and are corrected here:
@@ -63,16 +63,16 @@ hiddenInRss: true                 # optional: keep a page out of the feed
 ---
 ```
 
-## Step 1 — Register the domain (free)
+## Step 1, Register the domain (free)
 
 1. Sign in to the Student Pack: https://education.github.com/pack
-2. Find the **Namecheap** offer — free `.me` registration for 1 year.
+2. Find the **Namecheap** offer, free `.me` registration for 1 year.
 3. Register **r00tlv.me**.
 
 (Name.com's offer covers 25+ extensions including `.app`, `.live`, `.studio`
 if you ever want a second one. .TECH gives a free `.tech`.)
 
-## Step 2 — Push to GitHub
+## Step 2, Push to GitHub
 
 ```bash
 gh repo create MYounas126/<repo-name> --public --source=. --remote=origin
@@ -83,22 +83,49 @@ The theme is a submodule, so anyone cloning needs
 `git clone --recurse-submodules`. Cloudflare handles this automatically
 because `.gitmodules` uses an HTTPS URL.
 
-## Step 3 — Cloudflare Pages
+## Step 3, Cloudflare Pages
 
-1. https://dash.cloudflare.com → **Workers & Pages** → **Create** → **Pages**
-   → **Connect to Git** → pick the repo.
+1. https://dash.cloudflare.com, **Workers & Pages**, **Create**, **Pages**,
+   **Connect to Git**, pick `MYounas126/r00tlv.me`.
 2. Build settings:
-   - Framework preset: **Hugo**
-   - Build command: `hugo --gc --minify`
-   - Build output directory: `public`
-   - Environment variable: `HUGO_VERSION` = `0.165.0`
 
-   The `HUGO_VERSION` variable is required. Cloudflare's default Hugo is
-   older than PaperMod's `min_version = 0.146.0` and the build will fail
-   without it.
-3. Deploy. Confirm the `*.pages.dev` URL renders before touching DNS.
+   | Field | Value |
+   |---|---|
+   | Framework preset | Hugo |
+   | Build command | `hugo --gc --minify` |
+   | Build output directory | `public` |
+   | Root directory | *(leave blank)* |
 
-## Step 4 — Point the domain at Cloudflare
+3. Environment variable, **required**:
+
+   | Name | Value |
+   |---|---|
+   | `HUGO_VERSION` | `0.165.0` |
+
+   Cloudflare's default Hugo is older than PaperMod's `min_version = 0.146.0`.
+   Without this the build fails on template syntax.
+
+4. Deploy, then confirm the `*.pages.dev` URL renders before touching DNS.
+
+### Submodule warning
+
+The theme is a git submodule. Cloudflare fetches submodules automatically because
+`.gitmodules` uses an HTTPS URL, but if it ever fails to, **Hugo does not error**.
+It exits 0 and emits a site with no `index.html` at all. The CI workflow guards
+against this explicitly. If a deploy ever looks blank, check the theme first.
+
+### Security headers
+
+`static/_headers` ships a CSP plus the usual hardening headers, and Cloudflare
+Pages applies it automatically from the output root. Verified with the real headers
+applied: 0 CSP violations across home, post list, a post, about, search and a tag
+page, with the theme toggle, TOC scroll-spy and Fuse.js search all still working.
+
+`script-src` needs `'unsafe-inline'` because PaperMod emits inline scripts for the
+theme toggle and JSON-LD. Every actual script file is self-hosted, so the policy
+still blocks any externally-hosted script.
+
+## Step 4, Point the domain at Cloudflare
 
 1. Cloudflare dash → **Add a site** → `r00tlv.me` → Free plan.
 2. Cloudflare gives you two nameservers.
@@ -107,9 +134,9 @@ because `.gitmodules` uses an HTTPS URL.
 4. Wait for Cloudflare to report the zone as active (usually minutes,
    occasionally a few hours).
 5. Pages project → **Custom domains** → add `r00tlv.me` and `www.r00tlv.me`.
-   Cloudflare creates the DNS records itself — you do not add A records.
+   Cloudflare creates the DNS records itself, you do not add A records.
 
-## Step 5 — HTTPS
+## Step 5, HTTPS
 
 Universal SSL provisions automatically once the zone is active, typically
 within 15 minutes. Then set SSL/TLS mode to **Full (strict)**.
@@ -121,7 +148,7 @@ curl -sI https://r00tlv.me/ | head -1
 curl -s  https://r00tlv.me/rss.xml | head -5
 ```
 
-## Step 6 — Medium canonicals
+## Step 6, Medium canonicals
 
 For each of the six imported articles, on Medium:
 Story Settings → Advanced → Custom canonical URL → the new r00tlv.me URL.
@@ -129,8 +156,8 @@ Do not delete the Medium posts.
 
 ## Verify
 
-- `https://r00tlv.me/` — post list
-- `https://r00tlv.me/posts/anatomy-of-ghsa-x24x-425w-326q/` — GHSA writeup
+- `https://r00tlv.me/`, post list
+- `https://r00tlv.me/posts/anatomy-of-ghsa-x24x-425w-326q/`, GHSA writeup
 - `https://r00tlv.me/about/`
 - `https://r00tlv.me/rss.xml`
 - `https://r00tlv.me/search/`
@@ -138,11 +165,11 @@ Do not delete the Medium posts.
 
 ## Troubleshooting
 
-- **Cloudflare build fails on a template error** — almost always `HUGO_VERSION`
+- **Cloudflare build fails on a template error**, almost always `HUGO_VERSION`
   unset or too old. PaperMod needs ≥ 0.146.0.
-- **Theme directory empty on Cloudflare** — submodule not fetched; confirm
+- **Theme directory empty on Cloudflare**, submodule not fetched; confirm
   `.gitmodules` uses `https://`, not `git@`.
-- **Post doesn't appear** — either `draft: true` is still set, or the date is
+- **Post doesn't appear**, either `draft: true` is still set, or the date is
   in the future (`buildFuture` is deliberately `false`).
-- **Search returns nothing** — `/index.json` must be reachable; it is produced
+- **Search returns nothing**, `/index.json` must be reachable; it is produced
   by `[outputs] home = ["HTML", "RSS", "JSON"]`.
