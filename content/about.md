@@ -46,7 +46,6 @@ A Cyber Security graduate with an avid interest in breaking and building things.
 ## Disclosures
 
 - [**GHSA-x24x-425w-326q**](https://github.com/Acode-Foundation/Acode/security/advisories/GHSA-x24x-425w-326q) - Cross-app scripting in the Acode Android code editor via an unsanitised filename reaching `innerHTML`. CVSS v4.0 8.3 (High), CWE-79. Patched in Acode 1.12.9. Three-part writeup: [what I found](/posts/acode-cross-app-scripting-what-i-found/) / [how I found it](/posts/acode-cross-app-scripting-how-i-found-it/) / [how to prevent it](/posts/acode-cross-app-scripting-how-to-prevent-it/).
-- [**CVE-2026-68928**](https://github.com/Acode-Foundation/Acode/security/advisories/GHSA-wm94-wp33-43gx) - Exported TerminalService in Acode's bundled terminal plugin let any installed app execute arbitrary shell commands as Acode. CVSS v3.1 8.6 (High), CWE-749. Patched in Acode 1.12.7.
 
 ## Training
 
