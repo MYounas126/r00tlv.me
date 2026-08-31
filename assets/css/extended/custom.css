@@ -363,3 +363,7 @@
 /* Prev/next post nav labels were 4.25:1 on the chip background. */
 [data-theme="dark"] .paginav .title,
 [data-theme="dark"] .paginav span { color: #adaeb0; }
+
+/* The brand is the page heading on the home page. Same visual weight as
+   elsewhere; only the semantics change. */
+.logo h1 { margin: 0; font-size: inherit; line-height: inherit; font-weight: inherit; }

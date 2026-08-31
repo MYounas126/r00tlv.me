@@ -1,9 +1,9 @@
 ---
-title: "Cross-app scripting in Acode, part 2: how I found it"
+title: "Acode cross-app scripting, part 2: finding it"
 date: 2026-08-17T18:30:00+05:00
 categories: ["Research"]
 tags: ["android", "webview", "cordova", "xss", "methodology", "mobile"]
-description: "Patch-diffing a two-year-old security fix pointed straight at an unpatched sibling sink. The methodology, the lab work, and the single character that silently broke my first payload."
+description: "Patch-diffing a two-year-old fix pointed straight at an unpatched sibling sink. The methodology, and the single character that broke my first payload."
 weight: 2
 ShowToc: true
 TocOpen: false

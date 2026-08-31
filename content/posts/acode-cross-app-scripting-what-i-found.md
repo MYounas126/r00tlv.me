@@ -1,9 +1,9 @@
 ---
-title: "Cross-app scripting in Acode, part 1: what I found"
+title: "Acode cross-app scripting, part 1: the bug"
 date: 2026-08-17T18:00:00+05:00
 categories: ["Research"]
 tags: ["android", "webview", "cordova", "xss", "disclosure", "mobile"]
-description: "Any app on the phone, holding no permissions at all, could run JavaScript inside Acode's WebView and read the SSH and FTP passwords it had saved. GHSA-x24x-425w-326q, CVSS 8.3."
+description: "Any Android app, holding no permissions, could run JavaScript in Acode's WebView and read its saved SSH and FTP passwords. GHSA-x24x-425w-326q, CVSS 8.3."
 weight: 1
 ShowToc: true
 TocOpen: false

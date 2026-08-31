@@ -2,7 +2,11 @@
     <nav class="header-nav">
         {{- $label_text := (site.Params.label.text | default site.Title) }}
         <div class="logo">
+            {{- if .IsHome }}
+            <h1><a href="{{ "" | absLangURL }}" accesskey="h" title="{{ $label_text }} (Alt + H)">{{ $label_text }}</a></h1>
+            {{- else }}
             <a href="{{ "" | absLangURL }}" accesskey="h" title="{{ $label_text }} (Alt + H)">{{ $label_text }}</a>
+            {{- end }}
         </div>
 
         {{- $currentPage := . }}

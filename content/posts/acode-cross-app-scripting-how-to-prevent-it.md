@@ -1,9 +1,9 @@
 ---
-title: "Cross-app scripting in Acode, part 3: how to prevent it"
+title: "Acode cross-app scripting, part 3: fixing it"
 date: 2026-08-17T19:00:00+05:00
 categories: ["Research"]
 tags: ["android", "webview", "cordova", "xss", "appsec", "mobile"]
-description: "The same codebase fixed this class of bug three times and missed a sibling sink each time. Why sink-side sanitisation keeps failing, what the durable fix is, and how to audit your own hybrid app."
+description: "The same codebase fixed this bug class three times and missed a sibling each time. Why sink-side sanitisation fails, and how to audit your own hybrid app."
 weight: 3
 ShowToc: true
 TocOpen: false

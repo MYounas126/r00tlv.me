@@ -67,6 +67,7 @@ summaryLength = 30
   mainSections = ["posts"]
   avatar      = "/img/avatar.png"
   handle      = "@r00tlv"
+  homeTitle   = "r00tlv | Web, mobile and container security research"
   author      = "r00tlv"
   realName    = "Muhammad Younas"   # About page + post sidebar only
   hideAuthor  = true                # post byline shows the date only
