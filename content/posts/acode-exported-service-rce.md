@@ -3,8 +3,8 @@ title: "Acode: an exported service RCE I found too late"
 date: 2026-09-11T00:00:00+05:00
 categories: ["Research"]
 tags: ["android", "mobile", "rce", "disclosure", "methodology"]
-description: "An exported Android service handed any installed app a shell as Acode. I found it, proved it, and got nothing: it was patched on main six weeks earlier."
-summary: "An exported Android service handed any installed app a shell as Acode. I found it, proved it, and got nothing: it was patched on main six weeks earlier."
+description: "An exported Android service gave any installed app a shell as Acode. I found it and proved it, but it had already been patched on main six weeks earlier."
+summary: "An exported Android service gave any installed app a shell as Acode. I found it and proved it, but it had already been patched on main six weeks earlier."
 cover:
   image: "/img/posts/acode/acode-logo.webp"
   alt: "Acode logo"
@@ -13,32 +13,32 @@ ShowToc: true
 TocOpen: false
 ---
 
-While I was writing up [the Find-File XSS](/posts/acode-cross-app-scripting-what-i-found/) in Acode, I went looking for a second bug in the same app. I found one that was worse. Then I discovered it had already been fixed, six weeks before I started, and my report closed as a duplicate.
+While I was writing up [the Find-File XSS](/posts/acode-cross-app-scripting-what-i-found/) in Acode, I thought I should look for a second bug in the same app. I found one, and it was worse than the first. Unfortunately it had already been fixed six weeks before I even started, so my report was closed as a duplicate.
 
-This is that bug, and the one-line check that would have told me not to bother.
+This post is about that bug, and about the one check I should have run before spending a weekend on it.
 
 ## The bug in one paragraph
 
-Acode shipped a `TerminalService` declared `exported="true"` with no permission guard. Bind to it from any installed app, send it a message, and it runs whatever shell command you supply as Acode's own user. No permissions, no user interaction, no root.
+Acode was shipping a `TerminalService` declared as `exported="true"` without any permission guard on it. Any installed app could bind to this service, send it a message, and have it run whatever shell command it liked as Acode's own user. The attacking app needed no permissions of its own, and the victim did not have to do anything.
 
 ## Finding it took two commands
 
-I was not being clever here. Exported-component analysis is the first thing you do to an APK, and it is two commands.
+There was nothing clever about this part. Looking at exported components is the first thing anyone does with an APK, and it is two commands.
 
 ```console
 $ apktool d acode.apk -o out
 $ grep 'android:exported="true"' out/AndroidManifest.xml
 ```
 
-`TerminalService` came back exported. More importantly, it came back with no `android:permission` attribute, which means the Android framework will let anything on the device bind to it.
+`TerminalService` came back as exported. More importantly it came back without any `android:permission` attribute, which means the Android framework will happily let anything on the device bind to it.
 
-An exported service on its own is not a bug. Plenty of apps export services deliberately. The question is always what the service does with the messages it receives, and whether it checks who sent them.
+Now, an exported service is not automatically a bug. Many apps export services on purpose and there is nothing wrong with that. What matters is what the service does with the messages it receives, and whether it bothers to check who sent them.
 
 ## Tracing what it does with your message
 
-Opened the APK in jadx and followed the Messenger.
+I opened the APK in jadx and followed the Messenger through.
 
-`onBind` returns the Messenger to any caller. No caller inspection at all. The handler reads a `what` code from the incoming message, and case 5 pulls a `cmd` string straight out of the Bundle:
+`onBind` returns the Messenger to whoever asks for it, without inspecting the caller at all. The handler then reads a `what` code from the incoming message, and in case 5 it pulls a `cmd` string directly out of the Bundle:
 
 ```java
 // handleMessage, what == 5
@@ -48,22 +48,22 @@ ProcessManager.createProcessBuilder(...)
     // -> new ProcessBuilder("sh", "-c", cmd)
 ```
 
-Then it hands the command to `ProcessBuilder("sh","-c", cmd)` and returns stdout to the caller's own Messenger, so the attacker gets the output back.
+That command then goes to `ProcessBuilder("sh","-c", cmd)`, and stdout is returned to the caller's own Messenger, so the attacker also gets the output back.
 
-The thing I actually looked for next was any caller check at all:
+The next thing I wanted to know was whether there was any caller check anywhere in the service:
 
 ```console
 $ grep -rn "getCallingUid\|checkPermission\|checkCallingPermission" src/
 $
 ```
 
-Empty. Nothing verifies who is on the other end of that binding.
+Nothing came back. There is no verification anywhere of who is on the other end of that binding.
 
-So the chain is: any app binds, sends `what=5` with a command string, gets arbitrary shell execution as Acode plus the output. There is no gate anywhere along it.
+So the full chain is quite short. Any app binds to the service, sends `what=5` along with a command string, and receives arbitrary shell execution as Acode together with the output. There is no gate at any point in it.
 
 ## Proving it
 
-I wrote a zero-permission app that bound the service and sent a command. The interesting part of the log is the identity the shell ran as:
+I wrote a small app with no permissions at all, bound the service from it and sent a command. The useful part of the log is the identity that the shell ended up running as:
 
 ```
 BOUND to com.foxdebug.acode/.rk.exec.terminal.TerminalService (no permission required)
@@ -71,9 +71,9 @@ REPLY isSuccess=true
 uid=10229(u0_a229) ... context=u:r:untrusted_app_34:s0:c229
 ```
 
-`uid=10229` is Acode. My attacking app had a different uid. So the command executed inside Acode's sandbox, with Acode's permissions, at the request of an app that held nothing but `INTERNET`.
+Here `uid=10229` is Acode. My attacking app was running under a different uid, so the command had executed inside Acode's sandbox and with Acode's permissions, on behalf of an app that held nothing more than `INTERNET`.
 
-That is worse than the XSS I had just reported. The XSS needed the victim to open a file and then press Ctrl-P. This needs the victim to do nothing at all.
+This is a good deal worse than the XSS I had reported a few days earlier. For the XSS, the victim had to open a file and then press Ctrl-P. Here the victim does not have to do anything at all.
 
 Scored as CVSS v4.0:
 
@@ -81,53 +81,53 @@ Scored as CVSS v4.0:
 AV:L/AC:L/AT:N/PR:N/UI:N/VC:H/VI:H/VA:H
 ```
 
-The metric that moves it above the XSS is `UI:N`. No user interaction. Nothing to wait for.
+The metric that pushes it above the XSS is `UI:N`, since there is no user interaction to wait for.
 
-## Where it went wrong
+## Where I went wrong
 
-I checked prior art before reporting, which is the right instinct, but I checked it in the wrong order. I looked for published advisories and open issues. I did not check the commit history.
+I did check for prior art before reporting, which is the right instinct, but I checked in the wrong order. I looked for published advisories and open issues, and I did not look at the commit history.
 
-The bug had been fixed on `main` by [PR #2442](https://github.com/Acode-Foundation/Acode/pull/2442) on 3 July 2026. A one-line change, `exported="true"` to `exported="false"`.
+The bug had in fact been fixed on `main` by [PR #2442](https://github.com/Acode-Foundation/Acode/pull/2442) on 3 July 2026. It was a one-line change, `exported="true"` becoming `exported="false"`.
 
-The version I was testing, v1.12.6, was tagged on 18 June 2026. Before the fix. And no stable release had shipped the fix yet.
+The version I was testing was v1.12.6, tagged on 18 June 2026, which is before that fix. No stable release had shipped the fix yet either.
 
-So both things were true at once. Real users on the current release were exposed for roughly six weeks. And the fix commit had been sitting in public the whole time, which meant anyone reading the repository could see exactly what had been wrong.
+So two things were true at the same time. Real users on the current release had been exposed for roughly six weeks, and the fix commit had been sitting in public for all of that period, which meant anybody reading the repository could see what the problem was.
 
-Someone else reported it first. My report closed as a duplicate. The advisory that came out of it, [GHSA-wm94-wp33-43gx](https://github.com/Acode-Foundation/Acode/security/advisories/GHSA-wm94-wp33-43gx), credits `RohitKushvaha01` and `michael-benedetti`. Not me.
+Someone else reported it before me and my report was closed as a duplicate. The advisory that came out of it, [GHSA-wm94-wp33-43gx](https://github.com/Acode-Foundation/Acode/security/advisories/GHSA-wm94-wp33-43gx), credits `RohitKushvaha01` and `michael-benedetti`, and not me.
 
-## The lesson, which is not the obvious one
+## The actual lesson
 
-The obvious lesson is "check whether it is already fixed". True, but too vague to act on.
+The obvious lesson here is to check whether something is already fixed, which is true enough but too vague to be of much use.
 
-The sharper version is this: **a public fix commit advertises the vulnerability.** The moment a maintainer pushes `exported="true"` to `exported="false"` with a message like "fix(security) critical security issue", they have published a pointer to a live bug in every release that predates it. Anyone watching the repository can read that diff and write a report in an hour.
+The more useful way to put it is that **a public fix commit is an advertisement for the vulnerability**. The moment a maintainer pushes `exported="true"` to `exported="false"` with a message along the lines of "fix(security) critical security issue", they have published a pointer to a live bug in every release made before that commit. Anyone watching the repository can read the diff and write up a report within an hour.
 
-Which means fixed-but-unreleased bugs are the most contested findings in open source. You are not racing the maintainer. You are racing everyone else who read the same commit.
+This is why fixed-but-unreleased bugs are the most heavily contested findings in open source. The person you are competing with is not the maintainer. It is everybody else who happened to read the same commit.
 
-So the check has to come before the work, not before the report:
+The practical consequence is that this check belongs before the work, not before the report:
 
 ```console
 $ git log --oneline --all -- path/to/suspicious/file
 $ git log -S 'exported="true"' --oneline
 ```
 
-And if you already have a candidate and want to know whether the fix is in the release you are holding:
+And if you already have a candidate and want to know whether the fix made it into the release you are actually holding:
 
 ```console
 $ git merge-base --is-ancestor <fix-commit> <release-tag> && echo "already in this release"
 ```
 
-If the fix exists on `main` but not in your release, you have found something real that will probably be reported by someone else this week. Treat it as a race you are likely to lose, and spend your time on a sink with no fix commit anywhere. That is what the [Find-File XSS](/posts/acode-cross-app-scripting-what-i-found/) was, and it is why that one stayed mine.
+If the fix is present on `main` but not in your release, then you have found something real which will most likely be reported by somebody else within the week. It is better to treat that as a race you are going to lose, and put your time into a sink that has no fix commit anywhere against it. The [Find-File XSS](/posts/acode-cross-app-scripting-what-i-found/) was that sort of sink, which is why that one remained mine.
 
-## What I would have done differently
+## What I would do differently
 
-Nothing about the analysis. The manifest grep, the jadx trace, the PoC app, the impact proof: all of that was the work I wanted to be doing, and I would do it the same way again.
+Nothing at all about the analysis itself. The manifest grep, the jadx trace, the PoC app and the proof of impact were all the work I actually wanted to be doing, and I would go about it the same way again.
 
-The mistake was one command's worth of prior art, run at the wrong time. I checked whether the bug was *known publicly*. I should have checked whether it was *already fixed privately in the open*, which is a different question with a different command.
+The mistake was one command's worth of prior art, run at the wrong point. What I checked was whether the bug was publicly known. What I should have checked was whether it had already been quietly fixed in the open, which is a different question and needs a different command.
 
-Reporting a duplicate costs you nothing but time. But time is the whole budget when you are doing this around a job.
+A duplicate report costs nothing except time. But when you are doing this alongside a full-time job, time is more or less the entire budget.
 
 ## Related
 
 - [Cross-app scripting in Acode, part 1: the bug](/posts/acode-cross-app-scripting-what-i-found/) is the finding in the same app that did stay mine
 - [Part 2](/posts/acode-cross-app-scripting-how-i-found-it/) covers the patch-diffing method that found it
-- [PR #2442](https://github.com/Acode-Foundation/Acode/pull/2442), the one-line fix that beat me to it
+- [PR #2442](https://github.com/Acode-Foundation/Acode/pull/2442), the one-line fix that got there before me
