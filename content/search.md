@@ -8,6 +8,10 @@ placeholder: "search posts..."
 ShowBreadCrumbs: false
 ShowToc: false
 hidemeta: true
-cover:
-  image: "/img/og-default.png"
+# A client-side search box has no content of its own to rank, and an
+# indexed search page is a classic thin-content result. Keep it out of
+# the index and out of the sitemap so the two signals agree.
+robotsNoIndex: true
+sitemap:
+  disable: true
 ---

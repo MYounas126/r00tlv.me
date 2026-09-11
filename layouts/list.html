@@ -41,7 +41,7 @@
     {{- with .GetTerms "tags" }}
     <ul class="pe-tags">
       {{- range first 10 . }}
-      <li><a href="{{ .Permalink }}?from={{ $p.RelPermalink | urlquery }}">{{ .LinkTitle | lower }}</a></li>
+      <li><a href="{{ .Permalink }}#from={{ $p.RelPermalink | urlquery }}">{{ .LinkTitle | lower }}</a></li>
       {{- end }}
     </ul>
     {{- end }}
@@ -53,9 +53,9 @@
   </div>
 
   {{- with .Params.cover }}
-  {{- with .image }}
+  {{- if and .image (ne .hiddenInList true) }}
   <div class="pe-thumb">
-    <img src="{{ . | relURL }}" alt="" aria-hidden="true" loading="lazy" width="180" height="180">
+    <img src="{{ .image | relURL }}" alt="" aria-hidden="true" loading="lazy" width="180" height="180">
   </div>
   {{- end }}
   {{- end }}

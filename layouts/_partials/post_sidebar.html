@@ -26,7 +26,7 @@
     <div class="ps-label">Tags</div>
     <ul class="ps-tags">
       {{- range . }}
-      <li><a href="{{ .Permalink }}?from={{ $cur.RelPermalink | urlquery }}">{{ .LinkTitle }}</a></li>
+      <li><a href="{{ .Permalink }}#from={{ $cur.RelPermalink | urlquery }}">{{ .LinkTitle }}</a></li>
       {{- end }}
     </ul>
   </div>
