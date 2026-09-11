@@ -15,12 +15,12 @@ This is part 3 of three.
 
 1. [What I found](/posts/acode-cross-app-scripting-what-i-found/), the bug and its impact
 2. [How I found it](/posts/acode-cross-app-scripting-how-i-found-it/), the methodology
-3. **How to prevent it**, you're here
+3. **How to prevent it**, you are here
 
 ---
 
 Parts 1 and 2 covered a specific bug in a specific app. This part is the bit that transfers, because
-Acode isn't unusual. It's a well-maintained project with a responsive maintainer who fixed my report in
+Acode is not unusual. It is a well-maintained project with a responsive maintainer who fixed my report in
 about nineteen hours. It still shipped this bug, and the reason is structural rather than careless.
 
 ## The class
@@ -30,7 +30,7 @@ Stated generally:
 > Any string that originates outside your app, reaching `innerHTML` without escaping, is a stored XSS
 > sink in a Cordova, Capacitor or WebView application.
 
-The part people miss is how many strings originate outside the app on a mobile OS. On a server you've
+The part people miss is how many strings originate outside the app on a mobile OS. On a server you have
 got a clear mental model of untrusted input: request bodies, query parameters, headers. On Android the
 equivalent list is longer and much less obvious:
 
@@ -43,8 +43,8 @@ equivalent list is longer and much less obvious:
 - calendar event titles
 - media metadata: ID3 tags, EXIF fields
 
-Every one of those is a string chosen by something you don't control. In Acode's case it was the
-filename, and the crucial detail is that a `content://` display name **isn't a filename at all**. It's
+Every one of those is a string chosen by something you do not control. In Acode's case it was the
+filename, and the crucial detail is that a `content://` display name **is not a filename at all**. It is
 an arbitrary string a third-party app returns from a cursor. No 255-byte cap, no forbidden characters.
 It only looks like a filename.
 
@@ -63,17 +63,17 @@ Acode's history with this exact class is the interesting part. Three rounds:
 Same class, same codebase, three fixes, and each one repaired the reported call site rather than the
 pattern.
 
-That isn't carelessness. It's what happens when your defence lives at the sink. Compare what each
+That is not carelessness. It is what happens when your defence lives at the sink. Compare what each
 strategy requires.
 
-**Sanitising at the sink** requires that *every current and future sink* remembers to sanitise. It's a
+**Sanitising at the sink** requires that *every current and future sink* remembers to sanitise. It is a
 rule enforced by human vigilance, applied at a place that keeps growing. Add a new UI component that
-renders a hint, a tooltip, a label, and that's a new sink with the raw value still flowing toward it.
+renders a hint, a tooltip, a label, and that is a new sink with the raw value still flowing toward it.
 The new component is an instant reintroduction of the old bug.
 
 **Escaping at the source** requires that one function is correct, once. New sinks inherit the safety.
 
-The state of Acode after my fix shows it precisely. The sink now sanitises, so the bug is closed, but
+The state of Acode after my fix shows this clearly enough. The sink now sanitises, so the bug is closed, but
 `hintItem()` in `findFile/index.js` still interpolates `${name}` and `${subText}` raw. The dangerous
 value is still flowing. The next component that renders it without sanitising reopens the whole thing.
 
@@ -83,7 +83,7 @@ afterwards.
 
 ## The fixes, in order of durability
 
-### 1. Don't build HTML from untrusted strings at all
+### 1. Do not build HTML from untrusted strings at all
 
 The most durable fix removes the sink rather than guarding it. Instead of assembling a string:
 
@@ -117,7 +117,7 @@ return { node: row, value: url };
 ```
 
 `textContent` has no parsing mode where `<img src=x onerror=...>` becomes an element. Nothing to
-escape, nothing to remember. Move the inline styles to a stylesheet while you're in there.
+escape, nothing to remember. Move the inline styles to a stylesheet while you are in there.
 
 ### 2. If you must produce a string, escape at the source
 
@@ -139,11 +139,11 @@ return {
 ```
 
 Escape all five characters. Escaping only `<` and `>` leaves attribute-context injection open when the
-value lands in an unquoted attribute, which as part 2 showed is exactly the situation here.
+value lands in an unquoted attribute, which as part 2 showed is the situation we have here.
 
 ### 3. Sanitise at the sink as defence in depth
 
-This is what shipped, and it's correct as a second layer:
+This is what shipped, and it is correct as a second layer:
 
 ```js
 import DOMPurify from "dompurify";
@@ -160,7 +160,7 @@ onerror survived? false   eval/atob survived? false
 
 Note what survives: the `<img>` element itself. DOMPurify strips *script execution*, not *markup*. An
 attacker can still inject arbitrary bold text, links, images and layout into your UI. Inside a
-security-relevant dialog that's its own problem, because you can spoof a confirmation prompt without
+security-relevant dialog that is its own problem, because you can spoof a confirmation prompt without
 running any JavaScript.
 
 Which leads to the next one.
@@ -209,7 +209,7 @@ and do line breaks with CSS, `white-space: pre-wrap`, which the codebase already
 This is the recommendation I care most about, and the history justifies it. A lint rule catches what
 review missed three times running.
 
-ESLint, if you're on a DOM-aware config:
+ESLint, if you are on a DOM-aware config:
 
 ```json
 {
@@ -253,7 +253,7 @@ The XSS is fixed, but any future WebView data leak still discloses every saved s
 
 The notable part is that the app already knows how to do this properly. Its own account token lives in
 `shared_prefs/acode_auth_secure.xml` using AndroidX Security Crypto. The capability is there, it just
-isn't used for these secrets.
+is not used for these secrets.
 
 ## Auditing your own hybrid app
 
@@ -267,10 +267,10 @@ git grep -nE 'innerHTML|outerHTML|insertAdjacentHTML|document\.write' -- \
 ```
 
 **Step 2, triage by the one useful question.** For each hit: does it interpolate, or pass a constant?
-Constants are safe by construction, so stop reading. Only interpolations need a trace. That's what
+Constants are safe by construction, so stop reading. Only interpolations need a trace. That is what
 makes a twenty-hit list finish in an afternoon.
 
-**Step 3, trace each interpolated value back to its origin.** You're looking for values that entered
+**Step 3, trace each interpolated value back to its origin.** You are looking for values that entered
 from the OS:
 
 ```bash
@@ -281,7 +281,7 @@ For Cordova and Capacitor specifically, check anything arriving from `cordova-pl
 `@capacitor/filesystem`, contacts, share targets, and notification receivers.
 
 **Step 4, check what your bridge exposes.** Severity is reachability times capability. The same XSS in a
-WebView with no bridge is close to worthless. In a WebView exposing an SFTP client it's critical.
+WebView with no bridge is close to worthless. In a WebView exposing an SFTP client it is critical.
 Enumerate what a script in your WebView can actually reach:
 
 ```js
@@ -293,21 +293,21 @@ Acode's bridge grew between releases. `Terminal` and `iap` were added after 1.10
 XSS in a hybrid app rises every time you add a plugin, even if that release introduced no XSS.
 
 **Step 5, check whether past fixes touched sources or only sinks.** If a previous security fix only
-guarded sinks, you almost certainly still have unfixed siblings. That's not hypothetical. It's exactly
+guarded sinks, you almost certainly still have unfixed siblings. That is not hypothetical, since it is
 how this bug survived two years and two rounds of fixes.
 
 ## Three things to take away
 
 **Untrusted input on mobile is wider than you think.** A filename that arrived over a `content://` URI
 is an arbitrary attacker-chosen string with no length or character limits. It looks like a filename and
-it isn't one.
+it is not one.
 
 **Sink-side sanitisation is a single point of failure by design.** It requires every future sink to
 remember. Escape at the source and new sinks inherit safety instead of reintroducing the bug.
 
 **Severity is reachability times bridge capability.** "XSS in an editor" sounds cosmetic until you
 enumerate what the JavaScript inherits. Here that was the SFTP client, the FTP client, the filesystem
-and the stored server passwords, and that's what made a filename-rendering bug an 8.3.
+and the stored server passwords, and that is what made a filename-rendering bug an 8.3.
 
 ---
 

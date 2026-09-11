@@ -14,7 +14,7 @@ cover:
 This is part 2 of three.
 
 1. [What I found](/posts/acode-cross-app-scripting-what-i-found/), the bug and its impact
-2. **How I found it**, you're here
+2. **How I found it**, you are here
 3. [How to prevent it](/posts/acode-cross-app-scripting-how-to-prevent-it/), the developer takeaway
 
 ---
@@ -23,7 +23,7 @@ Part 1 covered [the bug](/posts/acode-cross-app-scripting-what-i-found/): an une
 reaching `innerHTML` in Acode's Find-File palette, reachable cross-app from any installed app. This
 part is the process, because the process is the half that transfers.
 
-The finding didn't come from staring at code hoping something would look wrong. It came from a much
+The finding did not come from staring at code hoping something would look wrong. It came from a much
 smaller question, asked about a fix that already existed.
 
 ## Start from a patch, not from scratch
@@ -50,7 +50,7 @@ So the question became: where else does the filename go?
 ## The seven phases
 
 This is the shape I worked in. The order matters, because phases 3 and 4 are only cheap once phase 2
-has narrowed what you're looking for.
+has narrowed what you are looking for.
 
 | Phase | What I did |
 |---|---|
@@ -59,7 +59,7 @@ has narrowed what you're looking for.
 | **2 · Sources** | The one that mattered: provider-supplied display names. |
 | **3 · Sinks** | `grep innerHTML` over `src/`, minus vendored ace. About 20 hits. |
 | **4 · Connect** | Triage each one: does the call site *interpolate*, or pass a constant? |
-| **5 · Trigger** | Ctrl-P. That's the whole trigger. |
+| **5 · Trigger** | Ctrl-P, and that is all the trigger there is. |
 | **6 · Verify** | Emulator, `logcat`, screenshots. Twice, via a real file and via a real malicious app. |
 | **7 · Report** | Private advisory through GitHub private vulnerability reporting. |
 
@@ -86,7 +86,7 @@ About 20 hits. Small enough to read every one.
 ### Phase 4, the triage question that found it
 
 Twenty sinks is only tractable because most are immediately dismissible. The question at each call site
-isn't "is this dangerous". It's:
+is not "is this dangerous". It is:
 
 > Does this interpolate a value, or pass a constant?
 
@@ -114,8 +114,8 @@ one exploitable. Being able to dismiss sixteen quickly is what lets the search f
 
 ## Verify in the binary, not the repo
 
-Before building any payload, confirm the vulnerable code is in the artefact you're actually attacking.
-Source tags lie about what users run. The version I had checked out and the version installed didn't
+Before building any payload, confirm the vulnerable code is in the artefact you are actually attacking.
+Source tags lie about what users run. The version I had checked out and the version installed did not
 match.
 
 ```bash
@@ -174,7 +174,7 @@ input keycombination 113 44   # Ctrl-P
 
 ## The single character that broke my first payload
 
-My first attempt used an arrow function, because it's shorter:
+My first attempt used an arrow function, because it is shorter:
 
 ```
 <img src=x onerror=editorManager.files.forEach(f=>eval(f.session.getValue()))>.txt
@@ -186,8 +186,8 @@ The palette rendered this:
 
 A broken-image icon, then the tail of my own payload sitting there as visible text.
 
-It's very easy to read that as "didn't work" and move on. It's actually a **partial win**, and the
-screen is telling you exactly what went wrong if you read it carefully.
+It is very easy to read that as "did not work" and move on. It is actually a **partial win**, and the
+screen is telling you what went wrong if you read it carefully.
 
 Two separate facts are visible:
 
@@ -207,20 +207,20 @@ The fix is a form containing no `>`:
 <img src=x onerror=editorManager.files.forEach(function(f){try{eval(f.session.getValue())}catch(e){}})>.txt
 ```
 
-`function(f){...}` has no `>`. That's the only change.
+`function(f){...}` has no `>`. That is the only change.
 
-The general lesson is worth more than the specific one. **Read the rendered output, don't just check
+The general lesson is worth more than the specific one. **Read the rendered output, do not just check
 whether it worked.** The escaped-versus-parsed distinction and the exact truncation point told me which
 character broke the payload. A screenshot debugged this faster than any tooling would have.
 
 ## Route B, the malicious app, which is the real attack
 
-Route A needs filesystem write access. The realistic attack needs nothing, and it's *easier*, because a
+Route A needs filesystem write access. The realistic attack needs nothing, and it is *easier*, because a
 `content://` display name has none of a filename's constraints. Arbitrary length, `/` allowed, quotes
 allowed.
 
-Because quotes are allowed, the attribute can be double-quoted, and once it's quoted the `>` problem
-from Route A simply doesn't exist. The canonical payload form works directly:
+Because quotes are allowed, the attribute can be double-quoted, and once it is quoted the `>` problem
+from Route A simply does not exist. The canonical payload form works directly:
 
 ```java
 String b64  = Base64.encodeToString(payloadJs.getBytes(), Base64.NO_WRAP);
@@ -242,25 +242,25 @@ which is the worst way for it to fail.
 ## Four environment obstacles, and what each actually was
 
 Almost none of my time went on the vulnerability. It went on the environment. These generalise to any
-file-delivery Android bug, so they're worth writing down.
+file-delivery Android bug, so they are worth writing down.
 
 | Symptom | Real cause | Fix |
 |---|---|---|
-| `E FileUtils: /sdcard/Download/x.txt: open failed: EACCES` | Acode targets a modern SDK, so scoped storage applies. `READ_EXTERNAL_STORAGE` doesn't grant arbitrary path reads. | Stage the file in `/sdcard/Android/data/com.foxdebug.acode/files` instead. |
-| File silently never opens, no error at all | I'd percent-encoded the `file://` URI. Acode fails to resolve the encoded path and does nothing. | Pass the URI unencoded, and drive it from a device-side `sh` script so quoting happens once. |
-| File visible but unreadable, owned `root root` | `adb` runs as root, so anything it creates is root-owned and the app's uid can't read it. | `chown <app-uid>:1078` after creating. Derive the uid from `ls -ldn` on the app's own directory, not from `dumpsys`. |
+| `E FileUtils: /sdcard/Download/x.txt: open failed: EACCES` | Acode targets a modern SDK, so scoped storage applies. `READ_EXTERNAL_STORAGE` does not grant arbitrary path reads. | Stage the file in `/sdcard/Android/data/com.foxdebug.acode/files` instead. |
+| File silently never opens, no error at all | I would percent-encoded the `file://` URI. Acode fails to resolve the encoded path and does nothing. | Pass the URI unencoded, and drive it from a device-side `sh` script so quoting happens once. |
+| File visible but unreadable, owned `root root` | `adb` runs as root, so anything it creates is root-owned and the app's uid cannot read it. | `chown <app-uid>:1078` after creating. Derive the uid from `ls -ldn` on the app's own directory, not from `dumpsys`. |
 | `Activity not started, task brought to front` | `MainActivity` is `singleTask`, so the intent got folded into the existing task. | `am force-stop` first for a clean `VIEW` delivery. |
-| `No content provider: content://...` when sending from `adb shell` | Package-visibility filtering. The shell can't grant a URI permission for a provider it doesn't own. | The attacker app itself has to send the intent, so `FLAG_GRANT_READ_URI_PERMISSION` means something. |
+| `No content provider: content://...` when sending from `adb shell` | Package-visibility filtering. The shell cannot grant a URI permission for a provider it does not own. | The attacker app itself has to send the intent, so `FLAG_GRANT_READ_URI_PERMISSION` means something. |
 
-One more that's a nice piece of evidence rather than an obstacle. At one point the INFO dialog showed a
-broken-image icon but no JavaScript ran. That's DOMPurify **working correctly** in `alert.js`. It
+One more that is a nice piece of evidence rather than an obstacle. At one point the INFO dialog showed a
+broken-image icon but no JavaScript ran. That is DOMPurify **working correctly** in `alert.js`. It
 permits `<img src=x>` and strips `onerror`. Seeing that confirmed both that the 2024 fix holds where it
-was applied, and that the palette was a genuinely different, unpatched path.
+was applied, and that the palette was a quite separate, unpatched path.
 
 ## Proving impact without causing it
 
-Getting `alert(1)`-equivalent execution is where a lot of writeups stop. It's also where the report is
-weakest, because "JavaScript ran" doesn't tell a maintainer what they're actually risking.
+Getting `alert(1)`-equivalent execution is where a lot of writeups stop. It is also where the report is
+weakest, because "JavaScript ran" does not tell a maintainer what they are actually risking.
 
 Two recon findings turned execution into demonstrated consequences, and both were cheap:
 
@@ -270,7 +270,7 @@ Two recon findings turned execution into demonstrated consequences, and both wer
   stores username and password *inside the URL*. So one `localStorage` read returns plaintext
   credentials, no bridge call at all.
 
-The credential-storage detail took reading two files. It's the difference between reporting "an XSS"
+The credential-storage detail took reading two files. It is the difference between reporting "an XSS"
 and reporting "an XSS that steals SSH credentials", which is the difference between a Medium and a
 High.
 
@@ -286,21 +286,21 @@ The demo credential points at `198.51.100.23`, RFC 5737 TEST-NET-2, non-routable
 myself. A report has to *demonstrate* impact, not *cause* it. Running a remote command adds no
 evidentiary weight and turns a PoC into an attack.
 
-## What I'd carry to the next target
+## What I would carry to the next target
 
 **Patch-diffing beats fresh hunting.** The disclosed bug named the untrusted value for me. All I had to
 ask was which other sinks it reaches. Much smaller question than "find a bug".
 
 **A sink-side-only fix is a lead, not a dead end.** When a project sanitises at sinks and leaves sources
 emitting raw values, every new sink is a fresh instance of the old bug. Check whether the fix touched
-the source. If it didn't, go hunting for siblings.
+the source. If it did not, go hunting for siblings.
 
-**Trigger difficulty isn't a property of the app.** Same value, same app: the 2024 path needed
-open, delete, resume. This one needs one keystroke users press constantly. A harder-to-reach sink isn't
+**Trigger difficulty is not a property of the app.** Same value, same app: the 2024 path needed
+open, delete, resume. This one needs one keystroke users press constantly. A harder-to-reach sink is not
 a safer sink.
 
-**Know which container you're in.** A filename is hostile: 255 bytes, no `/`, unquoted attribute. A
-`content://` display name is permissive. Recognising which one you're in tells you whether you need
+**Know which container you are in.** A filename is hostile: 255 bytes, no `/`, unquoted attribute. A
+`content://` display name is permissive. Recognising which one you are in tells you whether you need
 loader indirection or can inline the whole payload.
 
 **Verify in the shipped artefact.** `unzip` and `grep` the release APK.

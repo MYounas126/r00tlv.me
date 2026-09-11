@@ -14,13 +14,13 @@ cover:
 
 This is part 1 of three.
 
-1. **What I found**, you're here
+1. **What I found**, you are here
 2. [How I found it](/posts/acode-cross-app-scripting-how-i-found-it/), the methodology step by step
 3. [How to prevent it](/posts/acode-cross-app-scripting-how-to-prevent-it/), the developer takeaway
 
 ---
 
-[Acode](https://acode.app/) is an Android code editor with over a million installs. It's built on
+[Acode](https://acode.app/) is an Android code editor with over a million installs. It is built on
 Cordova, so the whole editor is HTML and JavaScript running in a WebView, with a bridge handing that
 JavaScript real device capabilities: the filesystem, an SFTP client, an FTP client, a terminal.
 
@@ -32,7 +32,7 @@ Reported, fixed, and published as
 [GHSA-x24x-425w-326q](https://github.com/Acode-Foundation/Acode/security/advisories/GHSA-x24x-425w-326q).
 CVSS v4.0 8.3, High. Fixed in 1.12.9.
 
-The bug itself is one unescaped variable. What makes it worth writing up isn't the variable. It's
+The bug itself is one unescaped variable. What makes it worth writing up is not the variable. It is
 where the variable comes from, and the fact that the project had already fixed this exact class of bug
 two years earlier and missed this instance.
 
@@ -47,16 +47,16 @@ name into a string of HTML:
 
 and assigns that string to `innerHTML`. Nothing escapes `name`.
 
-If a filename can contain `<img src=x onerror=...>`, that's script execution. On a desktop you'd
-shrug, because you control your own filenames. On Android you don't, and that's the whole finding.
+If a filename can contain `<img src=x onerror=...>`, that is script execution. On a desktop you'd
+shrug, because you control your own filenames. On Android you do not, and that is the finding in a nutshell.
 
-## Why the filename isn't yours
+## Why the filename is not yours
 
 When an Android app opens a file another app handed it, it usually gets a `content://` URI rather than
 a path. To show something useful in the UI, it asks the providing app for a human-readable name
 through a column called `OpenableColumns.DISPLAY_NAME`.
 
-That name isn't read off a disk. It's a string the *other app* returns from a cursor. The providing
+That name is not read off a disk. It is a string the *other app* returns from a cursor. The providing
 app picks it freely.
 
 This matters more than it sounds, because a real filename is a hostile place to hide a payload:
@@ -66,12 +66,12 @@ This matters more than it sounds, because a real filename is a hostile place to 
 | Real filename on disk | 255 bytes | no | yes | yes |
 | `content://` display name | none | yes | yes | yes |
 
-A real filename can't hold standard Base64, because Base64's alphabet includes `/`. A display name can
+A real filename cannot hold standard Base64, because Base64's alphabet includes `/`. A display name can
 hold anything. In my PoC the display name was **2,868 characters** and carried a whole Base64-encoded
 JavaScript payload.
 
 Google has a name for this bug class in its own guidance:
-`untrustworthy-contentprovider-provided-filename`. It's a known trap. Acode fell into it.
+`untrustworthy-contentprovider-provided-filename`. It is a known trap. Acode fell into it.
 
 ## The chain
 
@@ -83,7 +83,7 @@ Three links. Where the attacker's string enters, where it becomes HTML, and what
 `get filename()` at `:672`. For a file opened from a `content://` URI, that field holds the display
 name the other app supplied.
 
-Worth pausing on: **it's the same value the project's 2024 security issue was about.**
+Worth pausing on: **it is the same value the project's 2024 security issue was about.**
 
 ### 2. The sink
 
@@ -118,16 +118,16 @@ Both `${name}` and `${subText}` go in raw. That string reaches the actual sink a
 return <li attr-action="hint" attr-value={value} innerHTML={text}></li>;
 ```
 
-There's no `DOMPurify` import anywhere in that file.
+There is no `DOMPurify` import anywhere in that file.
 
 ### 3. The trigger
 
 `findFile`, bound to **Ctrl-P** (`src/lib/commands.js:203`, `src/lib/keyBindings.js:27`).
 
-That's the whole trigger. Open the palette. In a code editor Ctrl-P is muscle memory, one of the most
+That is all the trigger amounts to. Open the palette. In a code editor Ctrl-P is muscle memory, one of the most
 pressed shortcuts there is.
 
-## Why the 2024 fix didn't cover it
+## Why the 2024 fix did not cover it
 
 In December 2024 the project fixed an XSS reported as issue #1090. Commit `42002a67`,
 *"fix: XSS security issue #1090"*. Four files, `+8/-4`:
@@ -136,11 +136,11 @@ In December 2024 the project fixed an XSS reported as issue #1090. Commit `42002
 - `src/dialogs/alert.js`: `innerHTML: message` became `innerHTML: DOMPurify.sanitize(message)`
 - same treatment in `src/dialogs/confirm.js` and `src/dialogs/loader.js`
 
-Look at what it didn't touch: any source. `src/lib/checkFiles.js` still passes the raw filename.
+Look at what it did not touch: any source. `src/lib/checkFiles.js` still passes the raw filename.
 `helpers.errorMessage()` still deliberately builds HTML out of error strings.
 
 The fix landed entirely at the sinks. So the useful question was never "is the filename escaped?" It
-never was, and still isn't. The question was:
+never was, and still is not. The question was:
 
 > Which *other* sinks does that same unescaped filename reach?
 
@@ -153,7 +153,7 @@ All of this ran on a throwaway emulator against the public release APK. Acode `v
 
 ### The palette parses the injection
 
-The first thing to establish isn't "did code run". It's the narrower question: **is the filename being
+The first thing to establish is not "did code run". It is the narrower question: **is the filename being
 escaped, or parsed?** Different outcomes, and they look different on screen.
 
 ![The Find-File palette rendering a broken-image icon where the injected img tag was parsed, with the remainder of the payload spilling out as visible text](/img/posts/acode/04-palette-broken-image-icon.webp)
@@ -188,7 +188,7 @@ cordova : 15.0.0  platform=android
 ```
 
 `origin` is `https://localhost`, not `file://`. Every piece of app content lives in one web origin, so
-there's no same-origin boundary between the injected code and the editor. The injected script isn't
+there is no same-origin boundary between the injected code and the editor. The injected script is not
 sandboxed away from anything.
 
 ### Delivered by an app with no permissions
@@ -251,11 +251,11 @@ Four steps, no root, no adb:
 3. Acode opens the "file"
 4. Victim presses Ctrl-P, payload runs
 
-Step 4 is the only part needing the user, and it's a keystroke they press constantly.
+Step 4 is the only part needing the user, and it is a keystroke they press constantly.
 
 ## Impact
 
-"XSS in an editor" sounds cosmetic. It isn't, because of what the Cordova bridge hands to any
+"XSS in an editor" sounds cosmetic. It is not, because of what the Cordova bridge hands to any
 JavaScript running in that origin.
 
 ![Payload output showing the private sandbox listing, a stolen FTP credential in plaintext, a successful file write into Acode's private directory, and the enumerated sftp, ftp, Terminal and system bridge methods](/img/posts/acode/03-credential-theft-and-write.webp)
@@ -278,7 +278,7 @@ the username and password *inside the URL*:
 if (username && password) string += enc(username) + ":" + enc(password) + "@"
 ```
 
-So the payload doesn't even need a bridge call. One `localStorage` read returns the passwords in
+So the payload does not even need a bridge call. One `localStorage` read returns the passwords in
 plaintext:
 
 ```
@@ -303,18 +303,18 @@ And the reach, enumerated but not invoked:
 | `Terminal` | `install`, `startAxs`, `stopAxs`, `uninstall`, `backup`, `restore` |
 | `iap` | `purchase`, `consume`, `acknowledgePurchase` |
 
-Stolen SFTP credentials plus `sftp.exec` means command execution on the victim's own servers. That's
-the realistic worst case, and it's why a filename-rendering bug in an editor is worth 8.3.
+Stolen SFTP credentials plus `sftp.exec` means command execution on the victim's own servers. That is
+the realistic worst case, and it is why a filename-rendering bug in an editor is worth 8.3.
 
-The bridge has also *grown*. `Terminal` and `iap` weren't there in 1.10.5. Severity of any XSS in this
+The bridge has also *grown*. `Terminal` and `iap` were not there in 1.10.5. Severity of any XSS in this
 app rises with every release that adds a capability.
 
-## What I deliberately didn't do
+## What I deliberately did not do
 
-The credential in the demo points at `198.51.100.23`, RFC 5737 TEST-NET-2, non-routable. It's fake,
+The credential in the demo points at `198.51.100.23`, RFC 5737 TEST-NET-2, non-routable. It is fake,
 and I seeded it myself.
 
-I didn't call `sftp.exec`. I didn't call `system.setExec` or `deleteFile`. I didn't connect to any host
+I did not call `sftp.exec`. I did not call `system.setExec` or `deleteFile`. I did not connect to any host
 or send a byte off the device.
 
 A report has to *demonstrate* confidentiality and integrity loss, not *cause* it. Running a remote
@@ -339,7 +339,7 @@ OUTPUT: <strong style="font-size: 1rem;"><img src="x">.txt</strong>
 onerror survived? false   eval/atob survived? false
 ```
 
-The `<img>` element survives. The `onerror` handler and the `eval(atob(...))` inside it don't. No
+The `<img>` element survives. The `onerror` handler and the `eval(atob(...))` inside it do not. No
 execution.
 
 That closes this bug. Whether it closes the *class* is part 3.

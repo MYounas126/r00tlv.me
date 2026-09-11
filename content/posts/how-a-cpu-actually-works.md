@@ -13,21 +13,21 @@ ShowToc: true
 TocOpen: false
 ---
 
-Every diagram on this page is animated. Watch the movement first and read the words second. If a section feels hard, the animation is the answer, not the paragraph.
+Every diagram on this page is animated, so watch the movement first and read the words afterwards. If some section feels difficult, the animation will usually explain it better than the paragraph does.
 
-Do not try to memorise instructions. Nobody does that. There is a plain-English glossary at the bottom for any word that feels made up.
+Please do not try to memorise the instructions, because nobody really does that. There is a plain-English glossary at the bottom for any word that sounds made up.
 
 ## The one picture
 
 A computer is a notebook and a very fast, very stupid clerk.
 
-The notebook is memory. Every line has a number. The clerk reads one line, does exactly what it says, then looks at the next line. The clerk has a few sticky notes on the desk for scratch work: those are registers. One sticky note is special. It says which line to read next. That is the instruction pointer.
+The notebook is memory, and every line in it has a number. The clerk reads one line, does whatever it says, and then moves on to the next one. For rough work the clerk keeps a few sticky notes on the desk, and those are the registers. One of these notes is a special one, because it holds the number of the line to be read next, and that one is the instruction pointer.
 
-That is genuinely the whole machine. Everything else is detail.
+That really is the entire machine. Everything after this is detail.
 
 <img src="/img/posts/cpu/cpu-01-memory-is-paper.svg" alt="Memory as a numbered notebook, with an orange arrow marking the current line" width="820" height="440" loading="lazy" decoding="async" style="max-width:100%;height:auto;aspect-ratio:820/440">
 
-Watch the orange arrow. It is not decoration. That arrow is the instruction pointer, and the address next to it is the line number it is holding.
+Do watch the orange arrow, as it is not there for decoration. The arrow is the instruction pointer, and the address written next to it is the line number currently being held.
 
 | Machine width | Name of that register |
 | :--- | :--- |
@@ -35,25 +35,25 @@ Watch the orange arrow. It is not decoration. That arrow is the instruction poin
 | 32-bit | `EIP` |
 | 64-bit | `RIP` |
 
-Same register. `E` means extended, `R` means 64-bit. You will see all three in writeups.
+It is the same register in all three cases. `E` stands for extended and `R` for 64-bit, and you will come across all three forms in writeups.
 
-## The loop that is the entire CPU
+## The loop which is the CPU, more or less
 
 <img src="/img/posts/cpu/cpu-03-fetch-decode-execute.svg" alt="The fetch, decode, execute cycle with a highlight moving between stages" width="820" height="340" loading="lazy" decoding="async" style="max-width:100%;height:auto;aspect-ratio:820/340">
 
-Read the line. Work out what it means. Do it. Move on. Repeat a few billion times a second.
+The CPU reads the line, works out what it means, carries it out and then moves along to the next one, and it repeats this a few billion times every second.
 
-There is no step five.
+There is no fifth step hiding anywhere.
 
-Here is why that one idea matters more than everything else on this page. Nothing happens on a computer unless RIP points at it. So the goal of exploitation is not complicated:
+This single idea matters more than anything else on the page, for the simple reason that nothing happens on a computer unless RIP is pointing at it. The goal of exploitation therefore turns out to be quite a simple one:
 
 **Make RIP point at something you chose.**
 
-Buffer overflows, ROP, format strings, use-after-free are all different roads to that same place. Keep that sentence in your head for everything below.
+Buffer overflows, ROP, format strings and use-after-free are all just different roads leading to that same destination. It is worth keeping that sentence in mind for everything that follows.
 
 ## Thing 1 of 4: registers
 
-Registers are the CPU's variables. You get about sixteen useful ones, they are built into the chip, and they are the only place arithmetic actually happens.
+Registers are the variables of the CPU. There are roughly sixteen useful ones, they are built into the chip itself, and they are the only place where arithmetic actually takes place.
 
 <img src="/img/posts/cpu/cpu-02-registers-and-flags.svg" alt="Registers changing value as instructions execute, with the zero flag flipping at the end" width="820" height="430" loading="lazy" decoding="async" style="max-width:100%;height:auto;aspect-ratio:820/430">
 
@@ -65,11 +65,11 @@ Watch `EAX` change with each instruction, then watch the zero flag flip to 1 at 
 | `add eax, 3` | EAX = EAX + 3 |
 | `sub eax, ebx` | EAX = EAX - EBX |
 
-The answer always lands in the left-hand operand. That is the rule for nearly every instruction here.
+The answer always ends up in the left-hand operand, and this holds for nearly every instruction listed here.
 
 ### What the sixteen are for
 
-Do not memorise this. Look at it, then come back when you meet a name you do not recognise.
+There is no need to memorise this table. Have a look at it now and come back to it whenever you run into a name you do not recognise.
 
 | Register | What it is usually doing |
 | :--- | :--- |
@@ -83,11 +83,11 @@ Do not memorise this. Look at it, then come back when you meet a name you do not
 
 ### Why the same register has four names
 
-This confuses everyone, so it gets its own animation.
+This particular point confuses almost everybody, which is why it has been given its own animation.
 
 <img src="/img/posts/cpu/cpu-10-register-windows.svg" alt="rax, eax, ax and al shown as four windows onto the same eight bytes" width="820" height="400" loading="lazy" decoding="async" style="max-width:100%;height:auto;aspect-ratio:820/400">
 
-`rax`, `eax`, `ax` and `al` are not four registers. They are four windows onto the same eight bytes.
+`rax`, `eax`, `ax` and `al` are not four separate registers at all, but rather four windows looking onto the same eight bytes.
 
 | Name | Size | Which part |
 | :--- | :--- | :--- |
@@ -109,15 +109,15 @@ mov eax, 1    ; rax is now 0x0000000000000001   <- top half destroyed
 mov al, 1     ; rax is now 0xFFFFFFFFFFFFFF01   <- top half untouched
 ```
 
-When you are reading disassembly and a register mysteriously changed, this is almost always the reason.
+Whenever you are reading disassembly and some register has mysteriously changed, this is almost always the reason behind it.
 
 ### Flags
 
-Every `add`, `sub` and `cmp` quietly sets a few flags as a side effect. The one that matters first is the zero flag: it turns on when the last answer was 0. That single on/off bit is what makes decisions possible.
+Every `add`, `sub` and `cmp` quietly sets a few flags as a side effect. The first one to understand is the zero flag, which turns on whenever the last answer worked out to 0. It is that single on/off bit which makes decision-making possible at all.
 
 ## Thing 2 of 4: memory
 
-Sixteen variables will not get you far. A game's player position, lives, every coin, every enemy: all of that lives in memory, and only visits a register when the CPU needs to work on it.
+Sixteen variables will obviously not take you very far. In a game, the player position, the lives remaining, every coin and every enemy all live in memory, and they only visit a register when the CPU needs to work on them.
 
 <img src="/img/posts/cpu/cpu-04-load-and-store.svg" alt="Load moving a value from memory into a register, and store moving it back" width="820" height="400" loading="lazy" decoding="async" style="max-width:100%;height:auto;aspect-ratio:820/400">
 
@@ -126,7 +126,7 @@ mov eax, [0x4005db]     ; LOAD  : memory  -> register
 mov [0x4005e3], eax     ; STORE : register -> memory
 ```
 
-The square brackets mean exactly what they mean in Python. `my_list[5]` gets element 5. `[0x4005db]` gets whatever is at address `0x4005db`. An address is just a very large index, because memory is a very large array of bytes numbered from zero.
+The square brackets here mean the same thing they mean in Python. Where `my_list[5]` fetches element 5, `[0x4005db]` fetches whatever is sitting at address `0x4005db`. An address is really just a very large index, since memory itself is a very large array of bytes numbered from zero.
 
 Memory is to assembly what the disk is to a Python program. You pull things out into variables, do something with them, and eventually put them back.
 
@@ -134,7 +134,7 @@ Memory is to assembly what the disk is to a Python program. You pull things out 
 
 <img src="/img/posts/cpu/cpu-13-addressing-modes.svg" alt="Base plus index times scale plus offset resolving to a single address" width="820" height="420" loading="lazy" decoding="async" style="max-width:100%;height:auto;aspect-ratio:820/420">
 
-When you see `[rbx + rcx*4 + 8]`, do not panic. It is `array[i]` written out longhand.
+When you come across something like `[rbx + rcx*4 + 8]`, there is no reason to panic. It is simply `array[i]` written out the long way.
 
 | Part | Means |
 | :--- | :--- |
@@ -149,7 +149,7 @@ The scale is always 1, 2, 4 or 8, because that is the size of a `char`, `short`,
 
 <img src="/img/posts/cpu/cpu-09-speed-hierarchy.svg" alt="The latency gap between registers, cache levels and main memory" width="820" height="400" loading="lazy" decoding="async" style="max-width:100%;height:auto;aspect-ratio:820/400">
 
-Registers are effectively free. Main memory costs a couple of hundred cycles. That gap is why caches exist, and in the modern world it is also why timing leaks secrets. Spectre and Meltdown are built on the fact that a cache hit and a cache miss take measurably different amounts of time.
+Registers are effectively free, whereas main memory costs a couple of hundred cycles. This gap is the reason caches exist in the first place, and in the modern era it is also the reason timing leaks secrets. Spectre and Meltdown are built on the fact that a cache hit and a cache miss take measurably different amounts of time.
 
 ## Thing 3 of 4: the stack
 
@@ -164,13 +164,13 @@ The stack grows downward, toward smaller addresses.
 
 `RSP` always points at the top item. Think of a stack of plates: you only ever add or take from the top.
 
-Now the detail in that animation that most tutorials skip. **`pop` does not erase anything.** Look at the numbers that turn grey. They are still in memory, byte for byte. All `pop` does is move RSP back up, so that space is now considered free.
+Now for the detail in that animation which most tutorials skip over. **`pop` does not erase anything.** If you look at the numbers that turn grey, they are still sitting there in memory, byte for byte. All that `pop` does is move RSP back up, so that the space is treated as free from then onwards.
 
 That leftover data is a real and constantly exploited bug class. Uninitialised variables, where a function reads stack space it never wrote and gets the previous function's leftovers. Memory disclosure, where those leftovers get sent back to you and leak addresses, defeating ASLR. Heartbleed was this shape of bug: read more than was written, receive whatever happened to be lying there.
 
 ## Thing 4 of 4: control flow, which is only ever writing to RIP
 
-A CPU that could only run top to bottom could not loop, branch or call a function. So some instructions change RIP directly. That is all a jump is.
+A CPU that could only run from top to bottom would not be able to loop, branch or call a function. Certain instructions therefore change RIP directly, and that is all a jump really is.
 
 ```asm
 jmp 0x401050        ; roughly: mov rip, 0x401050
@@ -180,11 +180,11 @@ jmp 0x401050        ; roughly: mov rip, 0x401050
 
 <img src="/img/posts/cpu/cpu-07-conditional-branch.svg" alt="The same code taking two different paths depending only on the zero flag" width="820" height="450" loading="lazy" decoding="async" style="max-width:100%;height:auto;aspect-ratio:820/450">
 
-Same code, run twice. Only the flag differs, and the path changes completely.
+This is the same code run twice over. Only the flag is different, and yet the path taken changes completely.
 
-Here is the bit that makes `je` finally click. How do you check if two numbers are equal when all you have is arithmetic? Subtract them. If the answer is 0, they were equal.
+The part that finally makes `je` click is this. If arithmetic is all you have, how would you check whether two numbers are equal? You subtract one from the other, and if the answer comes out as 0 then they were equal.
 
-So `cmp eax, ebx` is just a `sub` that throws the answer away and keeps only the flags. Then `je`, "jump if equal", really means "jump if the zero flag is set". The name says the intent, the mechanism is the flag.
+So `cmp eax, ebx` is really just a `sub` which throws the answer away and keeps only the flags. After that, `je`, meaning "jump if equal", actually means "jump if the zero flag is set". The name tells you the intention while the flag is the actual mechanism.
 
 | Instruction | Jumps when |
 | :--- | :--- |
@@ -193,11 +193,11 @@ So `cmp eax, ebx` is just a `sub` that throws the answer away and keeps only the
 | `jg`, `jl` | greater than, less than (signed) |
 | `ja`, `jb` | above, below (unsigned) |
 
-Every `if`, `while` and `for` you have ever written becomes this pair: one instruction that sets a flag, one that reads it.
+Every `if`, `while` and `for` loop you have ever written comes down to this pair of instructions, one which sets a flag and another which reads it.
 
 ### Calling a function
 
-A function can be called from twenty different places, so it cannot hard-code the way back. The way back has to be stored somewhere. It gets stored on the stack.
+A function may be called from twenty different places, so it cannot possibly hard-code the way back. The return path has to be stored somewhere, and the place it gets stored is the stack.
 
 <img src="/img/posts/cpu/cpu-06-call-and-ret.svg" alt="call pushing a return address then jumping, ret popping it back into RIP" width="820" height="470" loading="lazy" decoding="async" style="max-width:100%;height:auto;aspect-ratio:820/470">
 
@@ -206,21 +206,21 @@ call  =  push (address of the next instruction)  +  jmp
 ret   =  pop that address back into RIP
 ```
 
-`call` leaves a breadcrumb. `ret` follows it home. That is the entire mechanism.
+In short, `call` leaves behind a breadcrumb and `ret` follows it home, and there is nothing more to the mechanism than that.
 
-Now watch that animation again, but as an attacker.
+Now have a look at that animation once more, this time from an attacker's point of view.
 
-The return address is just data. It sits in memory. It sits right next to the buffers that functions write your input into. If you can write past the end of a buffer, you reach the saved return address. Overwrite it, and when `ret` runs it pops **your** value into RIP.
+The return address is nothing more than data sitting in memory, and it sits right beside the buffers into which functions write your input. If you are able to write past the end of a buffer, you will reach that saved return address. Overwrite it, and when `ret` runs it will pop **your** value into RIP.
 
-Remember the goal: make RIP point at something you chose. `ret` will do it for you, happily, because it cannot tell your value from the one `call` saved. That is a stack buffer overflow in two sentences.
+Recall the goal, which was to make RIP point at something of your choosing. `ret` will happily do this for you, because it has no way of telling your value apart from the one that `call` had saved. That, in a couple of sentences, is a stack buffer overflow.
 
-Every mitigation you have heard of defends this one moment. Stack canaries detect the overwrite. ASLR hides the target. NX stops your data being runnable. CFI checks the destination is legal.
+Every mitigation you have heard of is defending this one moment. Stack canaries are there to detect the overwrite, ASLR hides the target, NX prevents your data from being runnable, and CFI checks that the destination is a legal one.
 
 ### How arguments get in and results get out
 
 <img src="/img/posts/cpu/cpu-12-calling-convention.svg" alt="Arguments being placed in rdi, rsi, rdx before a call, and the result arriving in rax" width="820" height="430" loading="lazy" decoding="async" style="max-width:100%;height:auto;aspect-ratio:820/430">
 
-There are no parameters down here. Arguments are agreed-upon registers, filled in just before the `call`.
+There is no such thing as a parameter at this level. Arguments are simply agreed-upon registers which get filled in just before the `call` happens.
 
 | Argument | Register (Linux / macOS) |
 | :--- | :--- |
@@ -233,31 +233,31 @@ There are no parameters down here. Arguments are agreed-upon registers, filled i
 | 7th and beyond | pushed on the stack |
 | return value | `rax` |
 
-This ordering is called a calling convention, and it is an agreement rather than a hardware rule. Linux and macOS use the order above. Windows x64 uses a different one: `rcx`, `rdx`, `r8`, `r9`. Same idea, different agreement.
+This ordering is known as a calling convention, and it is an agreement rather than any hardware rule. Linux and macOS follow the order given above, while Windows x64 follows a different one, namely `rcx`, `rdx`, `r8` and `r9`. The idea is the same, only the agreement differs.
 
-This is also why a decompiler can label arguments at all. It sees which registers a function reads before it writes them.
+This is also the reason a decompiler is able to label arguments in the first place, since it can see which registers a function reads before it has written to them.
 
 ## And none of it is text
 
 <img src="/img/posts/cpu/cpu-08-assembly-is-just-numbers.svg" alt="The instruction mov eax, 5 shown as the bytes B8 05 00 00 00 in memory" width="820" height="430" loading="lazy" decoding="async" style="max-width:100%;height:auto;aspect-ratio:820/430">
 
-`mov eax, 5` does not exist in memory. `B8 05 00 00 00` exists in memory.
+The text `mov eax, 5` does not exist anywhere in memory. What exists in memory is `B8 05 00 00 00`.
 
 `B8` is the opcode, meaning "load the next 4 bytes into EAX". `05 00 00 00` is the number, stored little-endian, smallest byte first, so it reads as `0x00000005`.
 
-A disassembler turns those bytes back into text you can read. It is a convenience, not the truth.
+A disassembler converts those bytes back into text that you can read, which is a convenience for us rather than the underlying truth.
 
-Three consequences that matter enormously later:
+There are three consequences of this which matter a great deal later on:
 
 **Patching a program means changing bytes.** Flip `74` (`je`) to `75` (`jne`) and you have inverted a licence check.
 
-**x86 instructions are not a fixed length.** They run from 1 to 15 bytes. Start disassembling at a different offset and you get a completely different, still-valid program. That is why disassemblers can be fooled.
+**x86 instructions are not of a fixed length.** They range anywhere from 1 to 15 bytes, so if you begin disassembling from a different offset you will end up with a completely different program which is still perfectly valid. This is how disassemblers can be fooled.
 
-**Code and data are the same bytes.** Nothing marks a byte as an instruction. The CPU runs whatever RIP points at, which is exactly why controlling RIP is so powerful, and why NX had to be invented to say "these bytes are data, refuse to run them".
+**Code and data are the same bytes.** Nothing marks a byte as an instruction. The CPU simply runs whatever RIP points at, which is why controlling RIP is so powerful, and why NX had to be invented to say "these bytes are data, refuse to run them".
 
 ## The whole instruction set you need right now
 
-Genuinely. This table plus the four ideas above will get you a long way.
+I mean that quite seriously. This table, along with the four ideas above, will take you a long way.
 
 | Instruction | Does |
 | :--- | :--- |
@@ -297,12 +297,12 @@ Genuinely. This table plus the four ideas above will get you a long way.
 ## Seven things to remember
 
 1. Memory is a notebook with numbered lines. RIP holds the line number of what runs next.
-2. Fetch, decode, execute, advance RIP. Forever. There is no step five.
+2. Fetch, decode, execute and advance RIP, on and on without stopping. There is no step five.
 3. Registers are the few variables you get, and `rax`/`eax`/`ax`/`al` are one register through four windows.
 4. Memory is a giant array, and `[base + index*scale + offset]` is just `array[i]`.
 5. The stack grows downward. `push` lowers RSP, `pop` raises it, and `pop` erases nothing.
 6. `cmp` sets a flag, the branch reads it, `call` leaves a breadcrumb, `ret` follows it home.
-7. It is all just numbers. Assembly is the disassembler being kind to you.
+7. In the end it is all just numbers, and assembly is only the disassembler being kind to you.
 
 And the line that connects this to everything else:
 
@@ -310,15 +310,15 @@ And the line that connects this to everything else:
 
 ## Takeaways
 
-A CPU is genuinely simple. Move data, do arithmetic, set flags, change RIP. The complexity of software is emergent, not built in.
+A CPU is a simple thing at heart. It moves data about, does arithmetic, sets flags and changes RIP. The complexity we see in software emerges from that, it is not built into the machine.
 
-The hard part of assembly is vocabulary, not concepts. You already understood variables, arrays, `if`, and function calls. This is those exact ideas with the training wheels off.
+The difficult part of assembly is the vocabulary rather than the concepts. You already understood variables, arrays, `if` statements and function calls, and this is the same set of ideas with the training wheels taken off.
 
 `call` and `ret` storing a return address in writable memory is the original sin that makes stack overflows possible. Every stack mitigation ever shipped patches over that one decision.
 
 Calling conventions are agreements, not hardware. Linux and Windows disagree, and knowing which one you are looking at changes how you read a function.
 
-What is on this page has not changed since the 1970s and will not change in your career. Only the instruction set will.
+Nothing on this page has changed since the 1970s and none of it will change during your career. Only the instruction set is going to change.
 
 ---
 
