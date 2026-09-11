@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 400" width="820" height="400" role="img" aria-label="Bar chart animating the relative cost of reading from registers, L1, L2, L3 cache and main memory">
+<style>
+  .bg{fill:#12161f}
+  text{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .ttl{fill:#e6edf3;font-size:17px;font-weight:700}
+  .sub{fill:#8b98ad;font-size:12.5px}
+  .nm{fill:#e6edf3;font-size:14px;font-weight:700}
+  .cy{fill:#8b98ad;font-size:12.5px}
+  .cap{fill:#62d38a;font-size:13.5px}
+  .warn{fill:#f2b544;font-size:13.5px}
+
+  .bar{transform-origin:left center;animation:grow 7s ease-out infinite}
+  @keyframes grow{0%,4%{transform:scaleX(0)}20%,92%{transform:scaleX(1)}100%{transform:scaleX(0)}}
+  .b1{animation-delay:0s} .b2{animation-delay:.35s} .b3{animation-delay:.7s}
+  .b4{animation-delay:1.05s} .b5{animation-delay:1.4s}
+</style>
+
+<rect class="bg" width="820" height="400"/>
+<text class="ttl" x="40" y="36">Why "keep it in registers" is the whole optimisation game</text>
+<text class="sub" x="40" y="57">Roughly how many CPU cycles it costs to read one value. Bars are to scale.</text>
+
+<text class="nm" x="40" y="102">registers</text>
+<rect class="bar b1" x="170" y="86" width="8"   height="22" rx="4" fill="#62d38a"/>
+<text class="cy" x="192" y="102">~1 cycle · free, essentially</text>
+
+<text class="nm" x="40" y="146">L1 cache</text>
+<rect class="bar b2" x="170" y="130" width="24"  height="22" rx="4" fill="#56d4dd"/>
+<text class="cy" x="206" y="146">~4 cycles</text>
+
+<text class="nm" x="40" y="190">L2 cache</text>
+<rect class="bar b3" x="170" y="174" width="60"  height="22" rx="4" fill="#56d4dd" opacity=".8"/>
+<text class="cy" x="242" y="190">~12 cycles</text>
+
+<text class="nm" x="40" y="234">L3 cache</text>
+<rect class="bar b4" x="170" y="218" width="170" height="22" rx="4" fill="#f2b544" opacity=".8"/>
+<text class="cy" x="352" y="234">~40 cycles</text>
+
+<text class="nm" x="40" y="278">main RAM</text>
+<rect class="bar b5" x="170" y="262" width="600" height="22" rx="4" fill="#ff6b6b" opacity=".8"/>
+<text class="cy" x="176" y="278" fill="#12161f" font-weight="700">~200 to 300 cycles</text>
+
+<text class="warn" x="40" y="330">The gap is not small. One RAM read costs what two hundred register operations cost.</text>
+<text class="cap"  x="40" y="356">This is why the video says an ideal program lives in registers, and why the caches exist at all.</text>
+<text class="cap"  x="40" y="380">It is also why timing differences leak secrets: cache hits and misses are measurably different.</text>
+</svg>

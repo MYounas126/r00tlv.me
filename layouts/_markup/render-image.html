@@ -1,0 +1,19 @@
+{{- /* Markdown images carry no intrinsic dimensions, so the browser cannot
+       reserve space and the article reflows when each one decodes. Read the
+       real size off disk at build time and pin it, matching how the animated
+       SVGs are embedded by hand. */ -}}
+{{- $alt := .PlainText | default .Title -}}
+{{- $dest := .Destination -}}
+{{- $local := and (not (urls.Parse $dest).Scheme) (hasPrefix $dest "/") -}}
+{{- $file := printf "static%s" $dest -}}
+{{- if and $local (fileExists $file) -}}
+  {{- with images.Config $file -}}
+<img src="{{ $dest | relURL }}" alt="{{ $alt }}"
+     width="{{ .Width }}" height="{{ .Height }}"
+     loading="lazy" decoding="async"
+     style="max-width:100%;height:auto;aspect-ratio:{{ .Width }}/{{ .Height }}">
+  {{- end -}}
+{{- else -}}
+<img src="{{ $dest }}" alt="{{ $alt }}" loading="lazy" decoding="async" style="max-width:100%;height:auto">
+{{- end -}}
+{{- with .Title }}{{ if ne . $alt }}<figcaption>{{ . }}</figcaption>{{ end }}{{ end -}}

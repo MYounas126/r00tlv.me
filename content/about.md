@@ -8,8 +8,6 @@ ShowToc: false
 ShowBreadCrumbs: false
 hidemeta: true
 hiddenInRss: true
-cover:
-  image: "/img/og-default.png"
 
 name: "Muhammad Younas"
 tagline: "A Security Researcher & Penetration Tester"

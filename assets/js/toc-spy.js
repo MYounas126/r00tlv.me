@@ -86,7 +86,9 @@
   if (box) {
     var mq = window.matchMedia('(min-width: 1000px)');
     function syncBox(e) { box.open = (e || mq).matches; }
-    syncBox();
+    /* The initial state is set by an inline script next to the element, so
+       that a narrow viewport never paints the TOC expanded. Only react to
+       later viewport changes here. */
     if (mq.addEventListener) mq.addEventListener('change', syncBox);
     else if (mq.addListener) mq.addListener(syncBox);
     toc.addEventListener('click', function (ev) {

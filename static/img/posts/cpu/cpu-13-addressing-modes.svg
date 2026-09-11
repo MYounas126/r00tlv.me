@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 420" width="820" height="420" role="img" aria-label="The address expression rbx plus rcx times four plus eight being worked out step by step into a final memory address">
+<style>
+  .bg{fill:#12161f}
+  .panel{fill:#1a2030;stroke:#2c3648;stroke-width:1.5;rx:10}
+  .cell{fill:#151b28;stroke:#39465c;stroke-width:1.2;rx:5}
+  text{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .ttl{fill:#e6edf3;font-size:17px;font-weight:700}
+  .sub{fill:#8b98ad;font-size:12.5px}
+  .lbl{fill:#8b98ad;font-size:12px;letter-spacing:1.2px}
+  .exp{font-size:24px;font-weight:700}
+  .base{fill:#56d4dd}.idx{fill:#b48ead}.sca{fill:#f2b544}.dis{fill:#62d38a}
+  .pl{fill:#5b6779;font-size:24px;font-weight:700}
+  .step{fill:#e6edf3;font-size:16px}
+  .res{fill:#62d38a;font-size:22px;font-weight:700}
+  .addr{fill:#7c8aa0;font-size:13px}
+  .mv{fill:#e6edf3;font-size:15px;font-weight:700}
+  .cap{fill:#62d38a;font-size:13.5px}
+
+  .v{opacity:0;animation:v 12.5s steps(1,end) infinite}
+  .s0{animation-delay:0s} .s1{animation-delay:2.5s} .s2{animation-delay:5s}
+  .s3{animation-delay:7.5s} .s4{animation-delay:10s}
+  @keyframes v{0%,19.9%{opacity:1}20%,100%{opacity:0}}
+  .k1{opacity:0;animation:k1 12.5s steps(1,end) infinite}
+  @keyframes k1{0%,19.9%{opacity:0}20%,100%{opacity:1}}
+  .k2{opacity:0;animation:k2 12.5s steps(1,end) infinite}
+  @keyframes k2{0%,39.9%{opacity:0}40%,100%{opacity:1}}
+  .k3{opacity:0;animation:k3 12.5s steps(1,end) infinite}
+  @keyframes k3{0%,59.9%{opacity:0}60%,100%{opacity:1}}
+  .k4{opacity:0;animation:k4 12.5s steps(1,end) infinite}
+  @keyframes k4{0%,79.9%{opacity:0}80%,100%{opacity:1}}
+</style>
+
+<rect class="bg" width="820" height="420"/>
+<text class="ttl" x="40" y="36">The scary-looking brackets are just array indexing</text>
+<text class="sub" x="40" y="57">mov eax, [rbx + rcx*4 + 8]   is   eax = my_array[i]   with the maths written out in full.</text>
+
+<text class="exp" x="40" y="106"><tspan fill="#8b98ad">[</tspan><tspan class="base">rbx</tspan><tspan class="pl"> + </tspan><tspan class="idx">rcx</tspan><tspan class="pl">*</tspan><tspan class="sca">4</tspan><tspan class="pl"> + </tspan><tspan class="dis">8</tspan><tspan fill="#8b98ad">]</tspan></text>
+
+<text class="lbl base" x="42"  y="130">BASE</text>
+<text class="lbl idx"  x="118" y="130">INDEX</text>
+<text class="lbl sca"  x="196" y="130">SCALE</text>
+<text class="lbl dis"  x="248" y="130">OFFSET</text>
+
+<rect class="panel" x="40" y="150" width="420" height="200"/>
+<text class="lbl" x="60" y="176">WORKING IT OUT</text>
+
+<text class="step" x="60" y="206">rbx = 0x1000   <tspan class="sub">start of the array</tspan></text>
+<text class="step" x="60" y="230">rcx = 3        <tspan class="sub">which element we want</tspan></text>
+
+<text class="step k1" x="60" y="264">start at        0x1000</text>
+<text class="step k2" x="60" y="288">3 × 4 bytes  =  + 12</text>
+<text class="step k3" x="60" y="312">skip a header =  + 8</text>
+<text class="res  k4" x="60" y="340">address = 0x1014</text>
+
+<rect class="panel" x="486" y="150" width="294" height="200"/>
+<text class="lbl" x="506" y="176">MEMORY</text>
+<rect class="cell" x="506" y="190" width="254" height="30"/>
+<text class="addr" x="518" y="211">0x1008</text><text class="mv" x="700" y="211">7</text>
+<rect class="cell" x="506" y="228" width="254" height="30"/>
+<text class="addr" x="518" y="249">0x100c</text><text class="mv" x="700" y="249">7</text>
+<rect class="cell" x="506" y="266" width="254" height="30"/>
+<text class="addr" x="518" y="287">0x1010</text><text class="mv" x="700" y="287">7</text>
+<rect class="cell" x="506" y="304" width="254" height="30"/>
+<rect class="k4" x="506" y="304" width="254" height="30" rx="5" style="fill:none;stroke:#62d38a;stroke-width:2"/>
+<text class="addr" x="518" y="325">0x1014</text>
+<text class="mv" x="700" y="325">42</text>
+<text class="res k4" x="580" y="326" font-size="14">← eax = 42</text>
+
+<text class="cap" x="40" y="384">Scale is 1, 2, 4 or 8 because that is the size of a char, short, int or pointer. The CPU does this</text>
+<text class="cap" x="40" y="408">multiply-and-add for free, in one instruction. That is all an array access has ever been.</text>
+</svg>

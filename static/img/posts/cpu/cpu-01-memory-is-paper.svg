@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 440" width="820" height="440" role="img" aria-label="Memory as a sheet of paper with the instruction pointer moving down line by line">
+<style>
+  .bg{fill:#12161f}
+  .panel{fill:#1a2030;stroke:#2c3648;stroke-width:1.5;rx:10}
+  text{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .ttl{fill:#e6edf3;font-size:17px;font-weight:700}
+  .sub{fill:#8b98ad;font-size:12.5px}
+  .addr{fill:#7c8aa0;font-size:14px}
+  .ins{fill:#e6edf3;font-size:15px}
+  .lbl{fill:#8b98ad;font-size:12px;letter-spacing:1.2px}
+  .val{fill:#56d4dd;font-size:19px;font-weight:700}
+  .hl{fill:#f2b544;opacity:.16;rx:5}
+  .arrow{fill:#f2b544;font-size:17px}
+  .note{fill:#62d38a;font-size:13px}
+
+  /* 6 steps over 12s */
+  #ip,#hl{animation:move 12s steps(1,end) infinite}
+  @keyframes move{
+    0%,16.6%   {transform:translateY(0px)}
+    16.7%,33.2%{transform:translateY(36px)}
+    33.3%,49.9%{transform:translateY(72px)}
+    50%,66.5%  {transform:translateY(108px)}
+    66.6%,83.2%{transform:translateY(144px)}
+    83.3%,100% {transform:translateY(180px)}
+  }
+  .v{opacity:0;animation:v 12s steps(1,end) infinite}
+  .v1{animation-delay:0s} .v2{animation-delay:2s} .v3{animation-delay:4s}
+  .v4{animation-delay:6s} .v5{animation-delay:8s} .v6{animation-delay:10s}
+  @keyframes v{0%,16.6%{opacity:1}16.7%,100%{opacity:0}}
+</style>
+
+<rect class="bg" width="820" height="440"/>
+<text class="ttl" x="40" y="38">Memory is just a sheet of paper</text>
+<text class="sub" x="40" y="59">Instructions sit on numbered lines. The line number is the address.</text>
+
+<rect class="panel" x="40" y="78" width="470" height="300"/>
+<text class="lbl" x="60" y="102">ADDRESS</text>
+<text class="lbl" x="180" y="102">INSTRUCTION</text>
+<line x1="56" y1="112" x2="494" y2="112" stroke="#2c3648" stroke-width="1"/>
+
+<g id="hl"><rect class="hl" x="52" y="122" width="446" height="28"/></g>
+<g id="ip"><text class="arrow" x="26" y="142">▶</text></g>
+
+<g>
+  <text class="addr" x="60" y="142">0x4005d0</text><text class="ins" x="180" y="142">mov  eax, 5</text>
+  <text class="addr" x="60" y="178">0x4005d5</text><text class="ins" x="180" y="178">add  eax, 3</text>
+  <text class="addr" x="60" y="214">0x4005d8</text><text class="ins" x="180" y="214">mov  ebx, 8</text>
+  <text class="addr" x="60" y="250">0x4005dd</text><text class="ins" x="180" y="250">sub  eax, ebx</text>
+  <text class="addr" x="60" y="286">0x4005df</text><text class="ins" x="180" y="286">je   0x4005f0</text>
+  <text class="addr" x="60" y="322">0x4005e1</text><text class="ins" x="180" y="322">mov  ecx, 1</text>
+</g>
+
+<rect class="panel" x="546" y="78" width="234" height="120"/>
+<text class="lbl" x="566" y="106">INSTRUCTION POINTER (RIP)</text>
+<text class="sub" x="566" y="126">points at the next line</text>
+<g>
+  <text class="val v v1" x="566" y="166">0x4005d0</text>
+  <text class="val v v2" x="566" y="166">0x4005d5</text>
+  <text class="val v v3" x="566" y="166">0x4005d8</text>
+  <text class="val v v4" x="566" y="166">0x4005dd</text>
+  <text class="val v v5" x="566" y="166">0x4005df</text>
+  <text class="val v v6" x="566" y="166">0x4005e1</text>
+</g>
+
+<rect class="panel" x="546" y="214" width="234" height="164"/>
+<text class="lbl" x="566" y="242">THE WHOLE CPU LOOP</text>
+<text class="note" x="566" y="272">1 · read line at RIP</text>
+<text class="note" x="566" y="296">2 · do what it says</text>
+<text class="note" x="566" y="320">3 · RIP moves on</text>
+<text class="sub" x="566" y="352">repeat, forever,</text>
+<text class="sub" x="566" y="370">billions of times a second</text>
+</svg>

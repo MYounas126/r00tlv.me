@@ -1,0 +1,78 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 430" width="820" height="430" role="img" aria-label="Function arguments being loaded into rdi rsi and rdx before a call, and the result coming back in rax">
+<style>
+  .bg{fill:#12161f}
+  .panel{fill:#1a2030;stroke:#2c3648;stroke-width:1.5;rx:10}
+  .reg{fill:#151b28;stroke:#39465c;stroke-width:1.5;rx:8}
+  text{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .ttl{fill:#e6edf3;font-size:17px;font-weight:700}
+  .sub{fill:#8b98ad;font-size:12.5px}
+  .lbl{fill:#8b98ad;font-size:12px;letter-spacing:1.2px}
+  .code{fill:#e6edf3;font-size:15px}
+  .ins{fill:#f2b544;font-size:14px;font-weight:700}
+  .rn{fill:#b48ead;font-size:14px;font-weight:700}
+  .val{fill:#56d4dd;font-size:22px;font-weight:700}
+  .empty{fill:#4a5568;font-size:22px;font-weight:700}
+  .ret{fill:#62d38a;font-size:24px;font-weight:700}
+  .cap{fill:#62d38a;font-size:13.5px}
+  .arrow{fill:#f2b544;font-size:15px}
+
+  .v{opacity:0;animation:v 12.5s steps(1,end) infinite}
+  .s0{animation-delay:0s} .s1{animation-delay:2.5s} .s2{animation-delay:5s}
+  .s3{animation-delay:7.5s} .s4{animation-delay:10s}
+  @keyframes v{0%,19.9%{opacity:1}20%,100%{opacity:0}}
+  .from1{opacity:0;animation:f1 12.5s steps(1,end) infinite}
+  @keyframes f1{0%,19.9%{opacity:0}20%,100%{opacity:1}}
+  .from2{opacity:0;animation:f2 12.5s steps(1,end) infinite}
+  @keyframes f2{0%,39.9%{opacity:0}40%,100%{opacity:1}}
+  .from3{opacity:0;animation:f3 12.5s steps(1,end) infinite}
+  @keyframes f3{0%,59.9%{opacity:0}60%,100%{opacity:1}}
+  .from4{opacity:0;animation:f4 12.5s steps(1,end) infinite}
+  @keyframes f4{0%,79.9%{opacity:0}80%,100%{opacity:1}}
+</style>
+
+<rect class="bg" width="820" height="430"/>
+<text class="ttl" x="40" y="36">How arguments get into a function</text>
+<text class="sub" x="40" y="57">There are no "parameters" down here. Arguments are just agreed-upon registers, filled in before the call.</text>
+
+<rect class="panel" x="40" y="78" width="330" height="150"/>
+<text class="lbl" x="58" y="102">YOUR C CODE</text>
+<text class="code" x="58" y="132">int r = add3(10, 20, 30);</text>
+<text class="lbl" x="58" y="166">BECOMES</text>
+<text class="ins v s0" x="58" y="192">mov edi, 10</text>
+<text class="ins v s1" x="58" y="192">mov edi, 10</text>
+<text class="ins v s2" x="58" y="192">mov esi, 20</text>
+<text class="ins v s3" x="58" y="192">mov edx, 30</text>
+<text class="ins v s4" x="58" y="192">call add3</text>
+<text class="sub v s4" x="58" y="216">result arrives in rax</text>
+
+<rect class="reg" x="396" y="78" width="384" height="52"/>
+<text class="rn" x="414" y="110">rdi</text><text class="lbl" x="466" y="110">1st argument</text>
+<text class="empty v s0" x="700" y="112">—</text>
+<text class="val from1" x="700" y="112">10</text>
+
+<rect class="reg" x="396" y="142" width="384" height="52"/>
+<text class="rn" x="414" y="174">rsi</text><text class="lbl" x="466" y="174">2nd argument</text>
+<text class="empty v s0" x="700" y="176">—</text><text class="empty v s1" x="700" y="176">—</text>
+<text class="val from2" x="700" y="176">20</text>
+
+<rect class="reg" x="396" y="206" width="384" height="52"/>
+<text class="rn" x="414" y="238">rdx</text><text class="lbl" x="466" y="238">3rd argument</text>
+<text class="empty v s0" x="700" y="240">—</text><text class="empty v s1" x="700" y="240">—</text>
+<text class="empty v s2" x="700" y="240">—</text>
+<text class="val from3" x="700" y="240">30</text>
+
+<rect class="reg" x="396" y="270" width="384" height="52" style="stroke:#62d38a"/>
+<text class="rn" x="414" y="302" fill="#62d38a">rax</text><text class="lbl" x="466" y="302">RETURN VALUE</text>
+<text class="empty v s0" x="700" y="304">—</text><text class="empty v s1" x="700" y="304">—</text>
+<text class="empty v s2" x="700" y="304">—</text><text class="empty v s3" x="700" y="304">—</text>
+<text class="ret from4" x="700" y="304">60</text>
+
+<text class="lbl" x="40" y="256">4th → rcx</text>
+<text class="lbl" x="40" y="276">5th → r8</text>
+<text class="lbl" x="40" y="296">6th → r9</text>
+<text class="lbl" x="40" y="316">7th+ → the stack</text>
+
+<text class="cap" x="40" y="360">This ordering is a CONVENTION, not a hardware rule. Linux and macOS use rdi, rsi, rdx, rcx, r8, r9.</text>
+<text class="cap" x="40" y="384">Windows x64 uses a different order: rcx, rdx, r8, r9. Same idea, different agreement.</text>
+<text class="sub" x="40" y="412">This is why a decompiler can name arguments at all: it knows which registers were read before they were written.</text>
+</svg>

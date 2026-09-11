@@ -1,0 +1,106 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 470" width="820" height="470" role="img" aria-label="The stack growing downward as push and pop run, with the stack pointer moving and popped values left behind as stale data">
+<style>
+  .bg{fill:#12161f}
+  .panel{fill:#1a2030;stroke:#2c3648;stroke-width:1.5;rx:10}
+  .cell{fill:#151b28;stroke:#39465c;stroke-width:1.2;rx:5}
+  text{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .ttl{fill:#e6edf3;font-size:17px;font-weight:700}
+  .sub{fill:#8b98ad;font-size:12.5px}
+  .lbl{fill:#8b98ad;font-size:12px;letter-spacing:1.2px}
+  .addr{fill:#7c8aa0;font-size:13px}
+  .mv{fill:#e6edf3;font-size:16px;font-weight:700}
+  .stale{fill:#5b6779;font-size:16px;font-weight:700}
+  .rn{fill:#b48ead;font-size:14px;font-weight:700}
+  .val{fill:#56d4dd;font-size:22px;font-weight:700}
+  .ins{fill:#e6edf3;font-size:15px}
+  .hl{fill:#f2b544;opacity:.16;rx:5}
+  .arrow{fill:#f2b544;font-size:16px}
+  .cap{fill:#62d38a;font-size:13.5px}
+  .warn{fill:#ff6b6b;font-size:13.5px}
+
+  /* 5 states over 12.5s */
+  #sp{animation:sp 12.5s steps(1,end) infinite}
+  @keyframes sp{
+    0%,19.9%  {transform:translateY(0px)}
+    20%,39.9% {transform:translateY(40px)}
+    40%,59.9% {transform:translateY(80px)}
+    60%,79.9% {transform:translateY(40px)}
+    80%,100%  {transform:translateY(0px)}
+  }
+  #ipbar{animation:ipbar 12.5s steps(1,end) infinite}
+  @keyframes ipbar{
+    0%,19.9%  {transform:translateY(-26px);opacity:0}
+    20%,39.9% {transform:translateY(0px);opacity:1}
+    40%,59.9% {transform:translateY(28px);opacity:1}
+    60%,79.9% {transform:translateY(56px);opacity:1}
+    80%,100%  {transform:translateY(84px);opacity:1}
+  }
+  .v{opacity:0;animation:v 12.5s steps(1,end) infinite}
+  .s0{animation-delay:0s} .s1{animation-delay:2.5s} .s2{animation-delay:5s}
+  .s3{animation-delay:7.5s} .s4{animation-delay:10s}
+  @keyframes v{0%,19.9%{opacity:1}20%,100%{opacity:0}}
+</style>
+
+<rect class="bg" width="820" height="470"/>
+<text class="ttl" x="40" y="38">The stack grows DOWNWARD</text>
+<text class="sub" x="40" y="59">push lowers the stack pointer. pop raises it. Nothing is ever erased.</text>
+
+<rect class="panel" x="40" y="78" width="300" height="150"/>
+<text class="lbl" x="58" y="102">PROGRAM</text>
+<g id="ipbar"><rect class="hl" x="52" y="116" width="276" height="24"/><text class="arrow" x="30" y="134">▶</text></g>
+<text class="ins" x="66" y="134">push 5</text>
+<text class="ins" x="66" y="162">push 9</text>
+<text class="ins" x="66" y="190">pop  eax</text>
+<text class="ins" x="66" y="218">pop  ebx</text>
+
+<rect class="panel" x="40" y="246" width="300" height="112"/>
+<text class="rn" x="58" y="272">EAX</text>
+<text class="val v s0" x="130" y="274">?</text><text class="val v s1" x="130" y="274">?</text>
+<text class="val v s2" x="130" y="274">?</text><text class="val v s3" x="130" y="274">9</text>
+<text class="val v s4" x="130" y="274">9</text>
+<text class="rn" x="58" y="318">EBX</text>
+<text class="val v s0" x="130" y="320">?</text><text class="val v s1" x="130" y="320">?</text>
+<text class="val v s2" x="130" y="320">?</text><text class="val v s3" x="130" y="320">?</text>
+<text class="val v s4" x="130" y="320">5</text>
+
+<rect class="panel" x="388" y="78" width="392" height="300"/>
+<text class="lbl" x="408" y="102">MEMORY</text>
+<text class="lbl" x="640" y="102">HIGH ADDRESS</text>
+<path d="M756 112 L756 330" stroke="#39465c" stroke-width="1.5"/>
+<path d="M756 330 L751 318 M756 330 L761 318" stroke="#39465c" stroke-width="1.5" fill="none"/>
+<text class="lbl" x="640" y="352">LOW ADDRESS</text>
+
+<rect class="cell" x="470" y="120" width="200" height="32"/>
+<text class="addr" x="408" y="142">0x7ffe38</text><text class="stale" x="560" y="142">…</text>
+
+<rect class="cell" x="470" y="160" width="200" height="32"/>
+<text class="addr" x="408" y="182">0x7ffe30</text><text class="stale" x="560" y="182">…</text>
+
+<rect class="cell" x="470" y="200" width="200" height="32"/>
+<text class="addr" x="408" y="222">0x7ffe28</text>
+<text class="stale v s0" x="560" y="222">—</text>
+<text class="mv    v s1" x="560" y="222">5</text>
+<text class="mv    v s2" x="560" y="222">5</text>
+<text class="mv    v s3" x="560" y="222">5</text>
+<text class="stale v s4" x="560" y="222">5</text>
+
+<rect class="cell" x="470" y="240" width="200" height="32"/>
+<text class="addr" x="408" y="262">0x7ffe20</text>
+<text class="stale v s0" x="560" y="262">—</text>
+<text class="stale v s1" x="560" y="262">—</text>
+<text class="mv    v s2" x="560" y="262">9</text>
+<text class="stale v s3" x="560" y="262">9</text>
+<text class="stale v s4" x="560" y="262">9</text>
+
+<rect class="cell" x="470" y="280" width="200" height="32"/>
+<text class="addr" x="408" y="302">0x7ffe18</text><text class="stale" x="560" y="302">—</text>
+
+<g id="sp">
+  <text class="arrow" x="686" y="182">◀</text>
+  <text class="rn" x="702" y="182" fill="#f2b544">RSP</text>
+</g>
+
+<text class="warn" x="40" y="404">Watch the greyed-out numbers: pop does not delete anything. It only moves RSP back up.</text>
+<text class="cap"  x="40" y="428">Whatever you "popped" is still sitting in memory, and the next push overwrites it.</text>
+<text class="cap"  x="40" y="450">That leftover data is where a huge amount of real-world exploitation lives.</text>
+</svg>

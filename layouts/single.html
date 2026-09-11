@@ -39,6 +39,11 @@
           {{ .TableOfContents }}
         </div>
       </details>
+      {{/* Narrow screens put the TOC above the article, so it must be
+           collapsed before first paint. Deciding this in toc-spy.js instead
+           collapses it after paint and shifts the whole post upward. */}}
+      <script>(function(){var b=document.getElementById('toc-box');
+        if(b&&!window.matchMedia('(min-width: 1000px)').matches)b.removeAttribute('open');})();</script>
     </aside>
     {{- end }}
   </div>

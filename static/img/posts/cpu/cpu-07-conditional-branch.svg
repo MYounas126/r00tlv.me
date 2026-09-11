@@ -1,0 +1,87 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 450" width="820" height="450" role="img" aria-label="The same je instruction taking the jump when the zero flag is set and falling through when it is not">
+<style>
+  .bg{fill:#12161f}
+  .panel{fill:#1a2030;stroke:#2c3648;stroke-width:1.5;rx:10}
+  .reg{fill:#151b28;stroke:#39465c;stroke-width:1.5;rx:8}
+  text{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .ttl{fill:#e6edf3;font-size:17px;font-weight:700}
+  .sub{fill:#8b98ad;font-size:12.5px}
+  .lbl{fill:#8b98ad;font-size:12px;letter-spacing:1.2px}
+  .addr{fill:#7c8aa0;font-size:12.5px}
+  .ins{fill:#e6edf3;font-size:14px}
+  .key{fill:#f2b544;font-size:14px;font-weight:700}
+  .rn{fill:#b48ead;font-size:14px;font-weight:700}
+  .val{fill:#56d4dd;font-size:22px;font-weight:700}
+  .zf1{fill:#ff6b6b;font-size:22px;font-weight:700}
+  .zf0{fill:#5b6779;font-size:22px;font-weight:700}
+  .arrow{fill:#f2b544;font-size:15px}
+  .good{fill:#62d38a;font-size:13.5px;font-weight:700}
+  .bad{fill:#ff6b6b;font-size:13.5px;font-weight:700}
+  .cap{fill:#62d38a;font-size:13.5px}
+  .runlbl{fill:#e6edf3;font-size:14px;font-weight:700}
+
+  .v{opacity:0;animation:v 15s steps(1,end) infinite}
+  .s0{animation-delay:0s}    .s1{animation-delay:2.5s} .s2{animation-delay:5s}
+  .s3{animation-delay:7.5s}  .s4{animation-delay:10s}  .s5{animation-delay:12.5s}
+  @keyframes v{0%,16.6%{opacity:1}16.7%,100%{opacity:0}}
+  /* run A = states 0-2, run B = states 3-5 */
+  .runA{opacity:0;animation:ra 15s steps(1,end) infinite}
+  @keyframes ra{0%,49.9%{opacity:1}50%,100%{opacity:0}}
+  .runB{opacity:0;animation:rb 15s steps(1,end) infinite}
+  @keyframes rb{0%,49.9%{opacity:0}50%,100%{opacity:1}}
+</style>
+
+<rect class="bg" width="820" height="450"/>
+<text class="ttl" x="40" y="36">A branch is a jump that asks a flag first</text>
+<text class="sub" x="40" y="57">Same instruction, same code, two different outcomes. Only the flag changed.</text>
+
+<rect class="panel" x="40" y="76" width="420" height="212"/>
+<text class="addr" x="58" y="112">0x40103e</text><text class="ins" x="150" y="112">cmp  eax, ebx</text>
+<text class="addr" x="58" y="140">0x401040</text><text class="key" x="150" y="140">je   0x401050</text>
+<text class="addr" x="58" y="168">0x401044</text><text class="ins" x="150" y="168">mov  edi, "wrong"</text>
+<text class="addr" x="58" y="196">0x401049</text><text class="ins" x="150" y="196">jmp  0x401055</text>
+<text class="addr" x="58" y="224">0x401050</text><text class="ins" x="150" y="224">mov  edi, "correct"</text>
+<text class="addr" x="58" y="252">0x401055</text><text class="ins" x="150" y="252">call puts</text>
+
+<text class="arrow v s0" x="34" y="112">▶</text>
+<text class="arrow v s1" x="34" y="140">▶</text>
+<text class="arrow v s2" x="34" y="224">▶</text>
+<text class="arrow v s3" x="34" y="112">▶</text>
+<text class="arrow v s4" x="34" y="140">▶</text>
+<text class="arrow v s5" x="34" y="168">▶</text>
+
+<path class="v s2" d="M330 140 C400 140 400 224 330 224" fill="none" stroke="#62d38a" stroke-width="2.5" marker-end="url(#g)"/>
+<path class="v s5" d="M330 140 L330 168" fill="none" stroke="#ff6b6b" stroke-width="2.5" marker-end="url(#r)"/>
+<defs>
+  <marker id="g" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="#62d38a"/></marker>
+  <marker id="r" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="#ff6b6b"/></marker>
+</defs>
+
+<text class="runlbl runA" x="490" y="100">RUN A   eax == ebx</text>
+<text class="runlbl runB" x="490" y="100">RUN B   eax != ebx</text>
+
+<rect class="reg" x="490" y="114" width="132" height="72"/>
+<text class="rn" x="506" y="138">EAX</text>
+<text class="val" x="506" y="170">8</text>
+<rect class="reg" x="638" y="114" width="132" height="72"/>
+<text class="rn" x="654" y="138">EBX</text>
+<text class="val runA" x="654" y="170">8</text>
+<text class="val runB" x="654" y="170">3</text>
+
+<rect class="reg" x="490" y="200" width="280" height="88"/>
+<text class="lbl" x="506" y="226">ZERO FLAG after cmp</text>
+<text class="zf0 v s0" x="506" y="264">?</text>
+<text class="zf1 v s1" x="506" y="264">1</text>
+<text class="zf1 v s2" x="506" y="264">1</text>
+<text class="zf0 v s3" x="506" y="264">?</text>
+<text class="zf0 v s4" x="506" y="264">0</text>
+<text class="zf0 v s5" x="506" y="264">0</text>
+<text class="good runA" x="546" y="262">8 - 8 = 0   →   JUMP TAKEN</text>
+<text class="bad  runB" x="546" y="262">8 - 3 = 5   →   FALLS THROUGH</text>
+
+<text class="cap" x="40" y="330">cmp is just sub that throws the answer away and keeps only the flags.</text>
+<text class="cap" x="40" y="354">"Is x equal to y?" becomes "subtract them, is the result zero?" That is why the instruction</text>
+<text class="cap" x="40" y="378">is called je, jump if equal, when what it really tests is a zero flag.</text>
+<text class="sub" x="40" y="414">Every if, every while, every for you have ever written compiles down to exactly this pair:</text>
+<text class="sub" x="40" y="434">one instruction that sets a flag, one instruction that reads it.</text>
+</svg>

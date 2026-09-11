@@ -1,0 +1,81 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 430" width="820" height="430" role="img" aria-label="Registers changing value as mov, add and sub execute, and the zero flag switching on">
+<style>
+  .bg{fill:#12161f}
+  .panel{fill:#1a2030;stroke:#2c3648;stroke-width:1.5;rx:10}
+  .reg{fill:#151b28;stroke:#39465c;stroke-width:1.5;rx:8}
+  text{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .ttl{fill:#e6edf3;font-size:17px;font-weight:700}
+  .sub{fill:#8b98ad;font-size:12.5px}
+  .ins{fill:#e6edf3;font-size:15px}
+  .lbl{fill:#8b98ad;font-size:12px;letter-spacing:1.2px}
+  .rn{fill:#b48ead;font-size:15px;font-weight:700}
+  .val{fill:#56d4dd;font-size:26px;font-weight:700}
+  .hl{fill:#f2b544;opacity:.16;rx:5}
+  .arrow{fill:#f2b544;font-size:17px}
+  .off{fill:#5b6779;font-size:22px;font-weight:700}
+  .on{fill:#ff6b6b;font-size:22px;font-weight:700}
+  .cap{fill:#62d38a;font-size:13px}
+
+  /* 5 states over 12.5s */
+  #ip,#hl{animation:move 12.5s steps(1,end) infinite}
+  @keyframes move{
+    0%,19.9%   {transform:translateY(0px)}
+    20%,39.9%  {transform:translateY(0px)}
+    40%,59.9%  {transform:translateY(34px)}
+    60%,79.9%  {transform:translateY(68px)}
+    80%,100%   {transform:translateY(102px)}
+  }
+  .v{opacity:0;animation:v 12.5s steps(1,end) infinite}
+  .s0{animation-delay:0s} .s1{animation-delay:2.5s} .s2{animation-delay:5s}
+  .s3{animation-delay:7.5s} .s4{animation-delay:10s}
+  @keyframes v{0%,19.9%{opacity:1}20%,100%{opacity:0}}
+  .pulse{animation:pulse 12.5s infinite}
+  @keyframes pulse{0%,79%{opacity:0}80%{opacity:1}86%{opacity:.25}92%{opacity:1}100%{opacity:1}}
+</style>
+
+<rect class="bg" width="820" height="430"/>
+<text class="ttl" x="40" y="38">Registers are the CPU's variables</text>
+<text class="sub" x="40" y="59">Fixed size, tiny in number, and the only place the CPU can actually do arithmetic.</text>
+
+<rect class="panel" x="40" y="78" width="330" height="200"/>
+<text class="lbl" x="60" y="102">PROGRAM</text>
+<g id="hl"><rect class="hl" x="52" y="116" width="306" height="26"/></g>
+<g id="ip"><text class="arrow" x="26" y="135">▶</text></g>
+<text class="ins" x="70" y="135">mov  eax, 5</text>
+<text class="ins" x="70" y="169">add  eax, 3</text>
+<text class="ins" x="70" y="203">mov  ebx, 8</text>
+<text class="ins" x="70" y="237">sub  eax, ebx</text>
+
+<rect class="panel" x="40" y="296" width="740" height="102"/>
+<text class="lbl" x="60" y="322">WHY sub SETS THE ZERO FLAG</text>
+<text class="cap" x="60" y="348">8 - 8 = 0, so the zero flag switches on. That is how a CPU compares two things:</text>
+<text class="cap" x="60" y="372">subtract them, and if the answer is zero they were equal. Hence "je" = jump if equal.</text>
+
+<rect class="reg" x="404" y="86" width="180" height="86"/>
+<text class="rn" x="422" y="112">EAX</text>
+<text class="val v s0" x="422" y="150">0</text>
+<text class="val v s1" x="422" y="150">5</text>
+<text class="val v s2" x="422" y="150">8</text>
+<text class="val v s3" x="422" y="150">8</text>
+<text class="val v s4" x="422" y="150">0</text>
+
+<rect class="reg" x="404" y="186" width="180" height="86"/>
+<text class="rn" x="422" y="212">EBX</text>
+<text class="val v s0" x="422" y="250">0</text>
+<text class="val v s1" x="422" y="250">0</text>
+<text class="val v s2" x="422" y="250">0</text>
+<text class="val v s3" x="422" y="250">8</text>
+<text class="val v s4" x="422" y="250">8</text>
+
+<rect class="reg" x="612" y="86" width="168" height="186"/>
+<text class="rn" x="630" y="112">FLAGS</text>
+<text class="lbl" x="630" y="146">ZERO FLAG (ZF)</text>
+<text class="off v s0" x="630" y="180">0</text>
+<text class="off v s1" x="630" y="180">0</text>
+<text class="off v s2" x="630" y="180">0</text>
+<text class="off v s3" x="630" y="180">0</text>
+<text class="on pulse" x="630" y="180">1</text>
+<text class="sub" x="630" y="212">set automatically by</text>
+<text class="sub" x="630" y="230">the last arithmetic</text>
+<text class="sub" x="630" y="248">instruction</text>
+</svg>

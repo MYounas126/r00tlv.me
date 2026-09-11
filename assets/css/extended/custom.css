@@ -329,6 +329,15 @@
 .toc-nav li > ul { display: none; }
 .toc-nav li.expanded > ul { display: block; }
 
+/* Below 1000px the TOC sits above the article, so letting the scroll-spy
+   expand branches would push the post down as the reader scrolls. Show the
+   whole outline instead: fixed height, no layout shift, and the collapsed
+   toggle already keeps it out of the way. */
+@media screen and (max-width: 1000px) {
+    .toc-nav li > ul { display: block; }
+    .toc-nav { max-height: 60vh; }
+}
+
 /* an ancestor of the current heading is highlighted too, like 0xdf */
 .toc-nav a.in-path {
     color: var(--accent);

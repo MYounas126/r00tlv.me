@@ -1,0 +1,79 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 470" width="820" height="470" role="img" aria-label="A call instruction pushing the return address onto the stack and ret popping it back into the instruction pointer">
+<style>
+  .bg{fill:#12161f}
+  .panel{fill:#1a2030;stroke:#2c3648;stroke-width:1.5;rx:10}
+  .cell{fill:#151b28;stroke:#39465c;stroke-width:1.2;rx:5}
+  text{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .ttl{fill:#e6edf3;font-size:17px;font-weight:700}
+  .sub{fill:#8b98ad;font-size:12.5px}
+  .lbl{fill:#8b98ad;font-size:12px;letter-spacing:1.2px}
+  .addr{fill:#7c8aa0;font-size:12.5px}
+  .ins{fill:#e6edf3;font-size:14px}
+  .key{fill:#f2b544;font-size:14px;font-weight:700}
+  .rn{fill:#b48ead;font-size:13px;font-weight:700}
+  .val{fill:#56d4dd;font-size:20px;font-weight:700}
+  .ret{fill:#62d38a;font-size:15px;font-weight:700}
+  .stale{fill:#5b6779;font-size:15px;font-weight:700}
+  .arrow{fill:#f2b544;font-size:15px}
+  .cap{fill:#62d38a;font-size:13.5px}
+  .warn{fill:#ff6b6b;font-size:13.5px}
+
+  .v{opacity:0;animation:v 12.5s steps(1,end) infinite}
+  .s0{animation-delay:0s} .s1{animation-delay:2.5s} .s2{animation-delay:5s}
+  .s3{animation-delay:7.5s} .s4{animation-delay:10s}
+  @keyframes v{0%,19.9%{opacity:1}20%,100%{opacity:0}}
+</style>
+
+<rect class="bg" width="820" height="470"/>
+<text class="ttl" x="40" y="36">call and ret: the stack remembers where you came from</text>
+<text class="sub" x="40" y="57">A function can be called from anywhere, so the way back has to be stored, not hard-coded.</text>
+
+<rect class="panel" x="40" y="76" width="380" height="148"/>
+<text class="lbl" x="58" y="100">main</text>
+<text class="addr" x="58" y="128">0x40101b</text><text class="ins" x="150" y="128">mov  edi, msg</text>
+<text class="addr" x="58" y="156">0x401020</text><text class="key" x="150" y="156">call greet</text>
+<text class="addr" x="58" y="184">0x401025</text><text class="ins" x="150" y="184">mov  eax, 0</text>
+<text class="addr" x="58" y="212">0x40102a</text><text class="ins" x="150" y="212">ret</text>
+<text class="arrow v s0" x="34" y="128">▶</text>
+<text class="arrow v s1" x="34" y="156">▶</text>
+<text class="arrow v s4" x="34" y="184">▶</text>
+
+<rect class="panel" x="40" y="242" width="380" height="120"/>
+<text class="lbl" x="58" y="266">greet</text>
+<text class="addr" x="58" y="294">0x401100</text><text class="ins" x="150" y="294">push rbp</text>
+<text class="addr" x="58" y="322">0x401104</text><text class="ins" x="150" y="322">mov  rbp, rsp</text>
+<text class="addr" x="58" y="350">0x401109</text><text class="key" x="150" y="350">ret</text>
+<text class="arrow v s2" x="34" y="294">▶</text>
+<text class="arrow v s3" x="34" y="350">▶</text>
+
+<rect class="panel" x="446" y="76" width="334" height="96"/>
+<text class="lbl" x="466" y="100">RIP · WHAT RUNS NEXT</text>
+<text class="val v s0" x="466" y="142">0x40101b</text>
+<text class="val v s1" x="466" y="142">0x401020</text>
+<text class="val v s2" x="466" y="142">0x401100</text>
+<text class="val v s3" x="466" y="142">0x401109</text>
+<text class="val v s4" x="466" y="142">0x401025</text>
+<text class="cap v s2" x="620" y="142">jumped in</text>
+<text class="cap v s4" x="620" y="142">jumped back</text>
+
+<rect class="panel" x="446" y="190" width="334" height="172"/>
+<text class="lbl" x="466" y="214">THE STACK</text>
+
+<rect class="cell" x="466" y="228" width="294" height="36"/>
+<text class="stale v s0" x="482" y="252">—  empty</text>
+<text class="stale v s1" x="482" y="252">—  empty</text>
+<text class="ret   v s2" x="482" y="252">0x401025</text>
+<text class="ret   v s3" x="482" y="252">0x401025</text>
+<text class="stale v s4" x="482" y="252">0x401025</text>
+
+<text class="cap v s2" x="482" y="290">↑ call PUSHED the return address</text>
+<text class="cap v s3" x="482" y="290">ret is about to POP it into RIP</text>
+<text class="sub v s4" x="482" y="290">left behind, RSP has moved back up</text>
+
+<text class="sub" x="466" y="326">call  =  push (address of next line)  +  jmp</text>
+<text class="sub" x="466" y="348">ret   =  pop into RIP</text>
+
+<text class="warn" x="40" y="398">This is THE most attacked structure in computing. The return address is data, sitting in memory,</text>
+<text class="warn" x="40" y="420">next to buffers you can write into.</text>
+<text class="cap"  x="40" y="446">Overwrite it and you choose where ret goes. That single sentence is buffer overflow exploitation.</text>
+</svg>
