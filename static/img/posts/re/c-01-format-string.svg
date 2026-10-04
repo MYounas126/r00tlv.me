@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 420" width="820" height="420" role="img" aria-label="Comparing printf with a constant format string against printf where the user controls the format string, showing each specifier consuming a stack value">
+<style>
+  .bg{fill:#12161f}
+  .box{fill:#1a2030;stroke:#2c3648;stroke-width:1.5;rx:10}
+  .safe{fill:#16241c;stroke:#2f5d43;stroke-width:1.5;rx:10}
+  .bad{fill:#241819;stroke:#5d3336;stroke-width:1.5;rx:10}
+  text{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .ttl{fill:#e6edf3;font-size:17px;font-weight:700}
+  .sub{fill:#8b98ad;font-size:12.5px}
+  .num{fill:#56d4dd;font-size:12px;font-weight:700}
+  .cap{fill:#62d38a;font-size:13.5px}
+  .code{fill:#e6edf3;font-size:14px}
+  .ok{fill:#62d38a;font-size:12.5px;font-weight:700}
+  .no{fill:#ed8796;font-size:12.5px;font-weight:700}
+  .out{fill:#8b98ad;font-size:12.5px}
+  .spec{fill:#f2b544;font-size:14px;font-weight:700}
+
+  #scan{animation:walk 9s steps(1,end) infinite}
+  @keyframes walk{
+    0%,24.9%  {transform:translateX(0px)}
+    25%,49.9% {transform:translateX(52px)}
+    50%,74.9% {transform:translateX(104px)}
+    75%,100%  {transform:translateX(156px)}
+  }
+  .l1{animation:p1 9s steps(1,end) infinite}
+  .l2{animation:p2 9s steps(1,end) infinite}
+  .l3{animation:p3 9s steps(1,end) infinite}
+  .l4{animation:p4 9s steps(1,end) infinite}
+  @keyframes p1{0%,24.9%{opacity:0} 25%,100%{opacity:1}}
+  @keyframes p2{0%,49.9%{opacity:0} 50%,100%{opacity:1}}
+  @keyframes p3{0%,74.9%{opacity:0} 75%,100%{opacity:1}}
+  @keyframes p4{0%,87.4%{opacity:0} 87.5%,100%{opacity:1}}
+</style>
+
+<rect class="bg" width="820" height="420"/>
+<text class="ttl" x="40" y="38">The same data. One of these is a vulnerability.</text>
+<text class="sub" x="40" y="59">The difference is whether the user controls the template or only the data.</text>
+
+<rect class="safe" x="40" y="82" width="740" height="76"/>
+<text class="ok"   x="60" y="106">SAFE</text>
+<text class="code" x="120" y="106">printf("%s", user);</text>
+<text class="out"  x="60" y="134">user = "%x %x %n"  ->  output:  %x %x %n</text>
+<text class="out"  x="470" y="134" fill="#62d38a">printed literally, as data</text>
+
+<rect class="bad" x="40" y="176" width="740" height="150"/>
+<text class="no"   x="60" y="200">UNSAFE</text>
+<text class="code" x="130" y="200">printf(user);</text>
+<text class="out"  x="60" y="226">user = </text>
+
+<g id="scan"><rect x="112" y="212" width="46" height="22" rx="4" fill="#f2b544" opacity="0.22"/></g>
+<text class="spec" x="118" y="228">%x</text>
+<text class="spec" x="170" y="228">%x</text>
+<text class="spec" x="222" y="228">%p</text>
+<text class="spec" x="274" y="228">%n</text>
+
+<text class="out l1" x="360" y="228">reads a stack value  ->  0x7ffd2a10</text>
+<text class="out l2" x="360" y="252">reads another        ->  0x00000001</text>
+<text class="out l3" x="360" y="276">leaks a pointer      ->  defeats ASLR</text>
+<text class="no  l4" x="360" y="300">WRITES to a pointed-at address</text>
+
+<text class="out" x="60" y="252">printf walks the string</text>
+<text class="out" x="60" y="276">and obeys every</text>
+<text class="out" x="60" y="300">specifier it finds</text>
+
+<text class="cap" x="40" y="364">%n turns a read into an arbitrary write, and an arbitrary write ends the story.</text>
+<text class="cap" x="40" y="386">Keep the template constant and pass the data separately. That is the whole fix,</text>
+<text class="cap" x="40" y="408">and it is the same fix as a parameterised SQL query.</text>
+</svg>

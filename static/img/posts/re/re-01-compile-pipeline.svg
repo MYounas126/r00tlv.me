@@ -1,0 +1,93 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 430" width="820" height="430" role="img" aria-label="The four compilation stages, with each piece of source information being struck out as the stage that discards it runs">
+<style>
+  .bg{fill:#12161f}
+  .box{fill:#1a2030;stroke:#2c3648;stroke-width:1.5;rx:10}
+  .panel{fill:#161b28;stroke:#2c3648;stroke-width:1.5;rx:10}
+  text{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .ttl{fill:#e6edf3;font-size:17px;font-weight:700}
+  .sub{fill:#8b98ad;font-size:12.5px}
+  .st{fill:#e6edf3;font-size:14px;font-weight:700}
+  .sd{fill:#8b98ad;font-size:11.5px}
+  .num{fill:#56d4dd;font-size:12px;font-weight:700}
+  .cap{fill:#62d38a;font-size:13.5px}
+  .item{fill:#e6edf3;font-size:12.5px}
+  .keep{fill:#62d38a;font-size:11.5px}
+
+  #glow{animation:hop 12s steps(1,end) infinite}
+  @keyframes hop{
+    0%,24.9%  {transform:translateX(0px)}
+    25%,49.9% {transform:translateX(186px)}
+    50%,74.9% {transform:translateX(372px)}
+    75%,100%  {transform:translateX(558px)}
+  }
+
+  /* each strike appears when the stage that destroys it runs */
+  .s1{animation:cut 12s steps(1,end) infinite}
+  .s2{animation:cut2 12s steps(1,end) infinite}
+  .s4{animation:cut4 12s steps(1,end) infinite}
+  @keyframes cut  {0%,24.9%{opacity:0} 25%,100%{opacity:1}}
+  @keyframes cut2 {0%,49.9%{opacity:0} 50%,100%{opacity:1}}
+  @keyframes cut4 {0%,74.9%{opacity:0} 75%,100%{opacity:1}}
+
+  .f1{animation:fade 12s steps(1,end) infinite}
+  .f2{animation:fade2 12s steps(1,end) infinite}
+  .f4{animation:fade4 12s steps(1,end) infinite}
+  @keyframes fade  {0%,24.9%{fill:#e6edf3} 25%,100%{fill:#4a5468}}
+  @keyframes fade2 {0%,49.9%{fill:#e6edf3} 50%,100%{fill:#4a5468}}
+  @keyframes fade4 {0%,74.9%{fill:#e6edf3} 75%,100%{fill:#4a5468}}
+</style>
+
+<rect class="bg" width="820" height="430"/>
+<text class="ttl" x="40" y="38">Every build stage throws something away</text>
+<text class="sub" x="40" y="59">Watch which row goes grey as each stage runs. That is what you can no longer recover.</text>
+
+<g id="glow"><rect x="36" y="86" width="176" height="90" rx="12" fill="#f2b544" opacity="0.18"/></g>
+
+<rect class="box" x="40" y="90" width="168" height="82"/>
+<text class="num" x="56" y="113">STAGE 1</text>
+<text class="st"  x="56" y="134">PRE-PROCESS</text>
+<text class="sd"  x="56" y="156">macros, includes</text>
+
+<rect class="box" x="226" y="90" width="168" height="82"/>
+<text class="num" x="242" y="113">STAGE 2</text>
+<text class="st"  x="242" y="134">COMPILE</text>
+<text class="sd"  x="242" y="156">source to assembly</text>
+
+<rect class="box" x="412" y="90" width="168" height="82"/>
+<text class="num" x="428" y="113">STAGE 3</text>
+<text class="st"  x="428" y="134">ASSEMBLE</text>
+<text class="sd"  x="428" y="156">mnemonics to opcodes</text>
+
+<rect class="box" x="598" y="90" width="182" height="82"/>
+<text class="num" x="614" y="113">STAGE 4</text>
+<text class="st"  x="614" y="134">LINK + STRIP</text>
+<text class="sd"  x="614" y="156">lay out, bind, remove</text>
+
+<path d="M208 131 L226 131" stroke="#56d4dd" stroke-width="2" marker-end="url(#a)"/>
+<path d="M394 131 L412 131" stroke="#56d4dd" stroke-width="2" marker-end="url(#a)"/>
+<path d="M580 131 L598 131" stroke="#56d4dd" stroke-width="2" marker-end="url(#a)"/>
+
+<rect class="panel" x="40" y="200" width="740" height="140"/>
+<text class="num" x="60" y="226">WHAT THE SOURCE HAD</text>
+
+<text class="item f1" x="60"  y="256">comments</text>
+<line class="s1" x1="56" y1="252" x2="128" y2="252" stroke="#ed8796" stroke-width="1.6"/>
+<text class="sd" x="360" y="256">gone at stage 1, a literal text substitution</text>
+
+<text class="item f2" x="60"  y="284">variable names, control-flow shape</text>
+<line class="s2" x1="56" y1="280" x2="330" y2="280" stroke="#ed8796" stroke-width="1.6"/>
+<text class="sd" x="360" y="284">gone at stage 2, the decompiler guesses these back</text>
+
+<text class="item f4" x="60"  y="312">.symtab, your own function names</text>
+<line class="s4" x1="56" y1="308" x2="322" y2="308" stroke="#ed8796" stroke-width="1.6"/>
+<text class="sd" x="360" y="312">gone at stage 4, one strip away</text>
+
+<text class="keep" x="60" y="334">.dynsym and .rodata survive: imported symbols and string literals are still there</text>
+
+<text class="cap" x="40" y="376">Stage 3 is the only near-lossless step, which is why disassembly is reliable</text>
+<text class="cap" x="40" y="398">and decompilation is inference. The bytes are evidence; the C is a hypothesis.</text>
+
+<defs>
+  <marker id="a" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#56d4dd"/></marker>
+</defs>
+</svg>

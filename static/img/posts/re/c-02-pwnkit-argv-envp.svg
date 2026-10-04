@@ -1,0 +1,79 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 400" width="820" height="400" role="img" aria-label="With argc zero the argv array is empty, so indexing argv one reads past its NULL terminator into the adjacent environment array">
+<style>
+  .bg{fill:#12161f}
+  .cell{fill:#1a2030;stroke:#2c3648;stroke-width:1.5;rx:6}
+  .env{fill:#241819;stroke:#5d3336;stroke-width:1.5;rx:6}
+  .nul{fill:#161b28;stroke:#2c3648;stroke-width:1.5;rx:6}
+  text{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .ttl{fill:#e6edf3;font-size:17px;font-weight:700}
+  .sub{fill:#8b98ad;font-size:12.5px}
+  .num{fill:#56d4dd;font-size:12px;font-weight:700}
+  .cap{fill:#62d38a;font-size:13.5px}
+  .val{fill:#e6edf3;font-size:12.5px}
+  .idx{fill:#8b98ad;font-size:11px}
+  .no{fill:#ed8796;font-size:12.5px;font-weight:700}
+  .lbl{fill:#f2b544;font-size:12.5px;font-weight:700}
+
+  /* 10s: 0-45% normal launch, 50-100% argc==0 launch */
+  .normal{animation:n 10s steps(1,end) infinite}
+  .attack{animation:a 10s steps(1,end) infinite}
+  @keyframes n{0%,44.9%{opacity:1} 45%,100%{opacity:0}}
+  @keyframes a{0%,44.9%{opacity:0} 45%,100%{opacity:1}}
+
+  #ptr{animation:slide 10s steps(1,end) infinite}
+  @keyframes slide{
+    0%,22.4%  {transform:translateX(0px)}
+    22.5%,44.9%{transform:translateX(150px)}
+    45%,67.4% {transform:translateX(0px)}
+    67.5%,100%{transform:translateX(300px)}
+  }
+</style>
+
+<rect class="bg" width="820" height="400"/>
+<text class="ttl" x="40" y="38">argc can be zero, and argv sits next to envp</text>
+<text class="sub" x="40" y="59">execve lets the caller launch a program with no arguments at all. CVE-2021-4034.</text>
+
+<text class="num" x="40" y="98">PROCESS MEMORY</text>
+
+<g id="ptr"><rect x="36" y="112" width="146" height="46" rx="8" fill="#f2b544" opacity="0.20"/></g>
+
+<rect class="cell" x="40"  y="116" width="138" height="38"/>
+<text class="idx"  x="52"  y="132">argv[0]</text>
+<text class="val normal" x="52" y="148">"/usr/bin/pkexec"</text>
+<text class="val attack" x="52" y="148" fill="#4a5468">NULL</text>
+
+<rect class="cell" x="190" y="116" width="138" height="38"/>
+<text class="idx"  x="202" y="132">argv[1]</text>
+<text class="val normal" x="202" y="148">"--user"</text>
+<text class="val attack" x="202" y="148" fill="#4a5468">(nothing)</text>
+
+<rect class="nul"  x="340" y="116" width="100" height="38"/>
+<text class="idx"  x="352" y="132">terminator</text>
+<text class="val"  x="352" y="148" fill="#8b98ad">NULL</text>
+
+<rect class="env"  x="452" y="116" width="150" height="38"/>
+<text class="idx"  x="464" y="132">envp[0]</text>
+<text class="val"  x="464" y="148">"PATH=/tmp/evil"</text>
+
+<rect class="env"  x="614" y="116" width="166" height="38"/>
+<text class="idx"  x="626" y="132">envp[1]</text>
+<text class="val"  x="626" y="148">"GCONV_PATH=..."</text>
+
+<text class="lbl" x="40"  y="184">argv  (caller controls the count)</text>
+<text class="no"  x="452" y="184">envp  (caller controls entirely)</text>
+
+<g class="normal">
+  <text class="val" x="40" y="232" fill="#62d38a">argc = 2   so argv[1] is a real argument</text>
+  <text class="sub" x="40" y="256">The program reads what it expects. Nothing surprising happens.</text>
+</g>
+
+<g class="attack">
+  <text class="no"  x="40" y="232">argc = 0   so argv[1] is past the end</text>
+  <text class="sub" x="40" y="256">pkexec indexed argv without checking argc. Reading past the NULL</text>
+  <text class="sub" x="40" y="278">walked into envp, so attacker-controlled environment was treated as</text>
+  <text class="sub" x="40" y="300">arguments, inside a SUID root binary. Reliable local root.</text>
+</g>
+
+<text class="cap" x="40" y="346">Every C programmer assumes argv[0] exists. It is an assumption, not a guarantee.</text>
+<text class="cap" x="40" y="368">Check argc before you touch argv, and never assume it in anything privileged.</text>
+</svg>
