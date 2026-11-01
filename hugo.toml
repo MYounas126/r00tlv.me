@@ -56,16 +56,6 @@ summaryLength = 30
     url        = "/tags/"
     weight     = 30
   [[menu.main]]
-    identifier = "lab"
-    name       = "Lab"
-    url        = "/lab/"
-    weight     = 35
-  [[menu.main]]
-    identifier = "anatomy"
-    name       = "Anatomy"
-    url        = "/anatomy/"
-    weight     = 40
-  [[menu.main]]
     identifier = "about"
     name       = "About"
     url        = "/about/"
@@ -117,62 +107,6 @@ summaryLength = 30
 
   # Footer links. Rendered as markdown, so a support link can be appended
   # here later without touching any template.
-  # Self-contained interactive pages served from static/. Hugo does not treat these
-  # as Pages, so layouts/sitemap.xml reads this list to put them in the sitemap.
-  [[params.staticPages]]
-    url = "/lab/"
-    priority = 0.8
-  [[params.staticPages]]
-    url = "/lab/stack-smash/"
-    priority = 0.8
-  [[params.staticPages]]
-    url = "/lab/format-string/"
-    priority = 0.8
-  [[params.staticPages]]
-    url = "/lab/tcache/"
-    priority = 0.8
-  [[params.staticPages]]
-    url = "/anatomy/"
-    priority = 0.8
-
-  [params.footer]
-    text = "[RSS](/rss.xml)"
-
-  [params.label]
-    text = "r00tlv"
-
-  [params.homeInfoParams]
-    Title   = ""
-    Content = ""
-
-  [[params.socialIcons]]
-    name = "github"
-    title = "GitHub"
-    url  = "https://github.com/MYounas126"
-  [[params.socialIcons]]
-    name = "linkedin"
-    title = "LinkedIn"
-    url  = "https://www.linkedin.com/in/myounasec/"
-  [[params.socialIcons]]
-    name = "medium"
-    url  = "https://thehackboy.medium.com/"
-  [[params.socialIcons]]
-    name = "email"
-    url  = "mailto:muhammadyounas.sec@gmail.com"
-  [[params.socialIcons]]
-    name = "rss"
-    title = "RSS"
-    url  = "/rss.xml"
-
-  [params.fuseOpts]
-    isCaseSensitive       = false
-    shouldSort            = true
-    location              = 0
-    distance              = 1000
-    threshold             = 0.4
-    minMatchCharLength    = 0
-    keys                  = ["title", "permalink", "summary", "content"]
-
 # ---------------------------- markup ------------------------------
 [markup]
   [markup.highlight]
