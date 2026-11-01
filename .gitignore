@@ -3,3 +3,7 @@ resources/_gen/
 .hugo_build.lock
 .DS_Store
 node_modules/
+
+# Local security-gate state. Records absolute paths from the machine that ran the
+# review, and this repository is public.
+.claude/security-review/

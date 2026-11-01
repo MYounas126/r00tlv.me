@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Lab: exploit primitives you can poke in a browser tab | r00tlv</title>
+<meta name="description" content="Interactive demonstrations of stack overflow, format string and heap exploitation primitives. No VM, no gdb, nothing to install.">
+<link rel="canonical" href="https://r00tlv.me/lab/">
+<meta name="robots" content="index, follow">
+<meta property="og:title" content="Lab: exploit primitives you can poke in a browser tab">
+<meta property="og:description" content="Interactive demonstrations of stack overflow, format string and heap exploitation primitives. No VM, no gdb, nothing to install.">
+<meta property="og:url" content="https://r00tlv.me/lab/">
+<meta property="og:type" content="website">
+<link rel="icon" href="/favicon.ico">
+<style>
+:root{
+  --bg:#12161f; --panel:#1a2030; --sunk:#161b28; --stroke:#2c3648; --edge:#626e84;
+  --txt:#e6edf3; --sub:#8b98ad; --dim:#808b9e;
+  --cyan:#56d4dd; --green:#62d38a; --amber:#f2b544; --red:#ed8796; --purple:#c678dd;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--txt);font-family:var(--mono);
+  font-size:15px;line-height:1.6;-webkit-font-smoothing:antialiased}
+.wrap{max-width:880px;margin:0 auto;padding-inline:20px;padding-block:34px 70px}
+a{color:var(--cyan);text-decoration:none}
+a:hover{text-decoration:underline}
+.back{font-size:13px;color:var(--sub)}
+h1{font-size:clamp(23px,4.4vw,31px);font-weight:700;margin:18px 0 10px;line-height:1.2}
+.lede{color:var(--sub);font-size:14.5px;margin:0;max-width:68ch}
+.lede + .lede{margin-top:11px}
+
+.list{display:flex;flex-direction:column;gap:16px;margin-top:36px}
+.item{display:block;background:var(--panel);border:1px solid var(--stroke);
+  border-left:3px solid var(--ac);border-radius:9px;padding:18px 20px;
+  text-decoration:none;color:inherit}
+.item:hover{border-color:var(--sub);border-left-color:var(--ac);text-decoration:none}
+.item:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
+.ihead{display:flex;align-items:baseline;gap:11px;flex-wrap:wrap}
+.ihead h2{font-size:16px;font-weight:700;margin:0;color:var(--txt)}
+.tag{font-size:10.5px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;
+  color:var(--ac);border:1px solid var(--ac);border-radius:4px;padding:2px 7px}
+.idesc{margin:9px 0 0;font-size:13.5px;color:var(--sub);line-height:1.6;max-width:70ch}
+.ifoot{margin:11px 0 0;font-size:12px;color:var(--dim)}
+.a-stack{--ac:var(--red)} .a-fmt{--ac:var(--amber)} .a-heap{--ac:var(--purple)}
+
+.soon{margin-top:34px;background:var(--sunk);border:1px solid var(--stroke);border-radius:9px;
+  padding:17px 19px}
+.soon h3{font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--cyan);margin:0 0 10px}
+.soon ul{margin:0;padding-left:19px;display:flex;flex-direction:column;gap:7px}
+.soon li{font-size:13.5px;color:var(--sub);line-height:1.55}
+.soon b{color:var(--txt)}
+
+.why{margin-top:34px;font-size:13.5px;color:var(--sub);line-height:1.65;max-width:68ch}
+.why b{color:var(--txt)}
+footer{margin-top:40px;padding-top:18px;border-top:1px solid var(--stroke);
+  font-size:12.5px;color:var(--dim)}
+@media (max-width:620px){.item{padding:15px 16px}}
+
+/* Horizontal scroll containers must be keyboard-operable (WCAG 2.1.1).
+   Chrome and Safari only allow arrow-key scrolling when the container
+   is focusable, so each is given tabindex=0 by the script below. */
+[tabindex="0"]:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
+
+/* LINK UNDERLINE: WCAG 1.4.1. A link inside a paragraph must be
+   distinguishable without relying on hue, and our cyan measures under 2:1
+   against the surrounding text. Standalone block links (nav, cards) carry
+   their own position and box, so they stay underline-free. */
+p a, li a, figcaption a, .lic a, .note a, .why a, footer a, .cdesc a{
+  text-decoration:underline; text-underline-offset:2px;
+  text-decoration-thickness:1px; text-decoration-color:color-mix(in srgb,var(--cyan) 55%, transparent);
+}
+p a:hover, li a:hover, footer a:hover{text-decoration-color:var(--cyan)}
+</style>
+</head>
+<body>
+<main class="wrap">
+
+<div class="back"><a href="/">&larr; r00tlv</a> &middot; <a href="/posts/">posts</a> &middot; <a href="/anatomy/">anatomy</a></div>
+
+<h1>Lab</h1>
+<p class="lede">Exploit primitives you can poke at directly, in a browser tab. No virtual machine,
+no gdb, nothing to install and nothing that touches your own memory.</p>
+<p class="lede">Each one is a simulation rather than a real process, so it models the behaviour
+honestly and says where it simplifies. They exist because some of these ideas take four seconds
+to understand when you can move the bytes yourself, and considerably longer when you cannot.</p>
+
+<div class="list">
+
+  <a class="item a-stack" href="/lab/stack-smash/">
+    <div class="ihead"><h2>Smash a stack</h2><span class="tag">stack overflow</span></div>
+    <p class="idesc">Type into a 16-byte buffer and watch the extra bytes run past the end into
+    the saved base pointer and then the return address. Turn the stack protector on and watch the
+    same input get caught instead.</p>
+    <p class="ifoot">pairs with How a CPU actually works</p>
+  </a>
+
+  <a class="item a-fmt" href="/lab/format-string/">
+    <div class="ihead"><h2>Walk a format string</h2><span class="tag">CWE-134</span></div>
+    <p class="idesc">Type a format string and watch printf consume the stack one specifier at a
+    time, including the register arguments that every tutorial forgets about. Then watch %n turn
+    a read into an arbitrary write.</p>
+    <p class="ifoot">pairs with Four real CVEs in a 12-line C program</p>
+  </a>
+
+  <a class="item a-heap" href="/lab/tcache/">
+    <div class="ihead"><h2>Poison a tcache bin</h2><span class="tag">glibc heap</span></div>
+    <p class="idesc">Free chunks into a tcache bin, corrupt a forward pointer and make the next
+    malloc hand you an address you chose. Includes safe-linking, which is the reason most heap
+    tutorials written before 2020 no longer work.</p>
+    <p class="ifoot">modern glibc, with mitigations modelled</p>
+  </a>
+
+</div>
+
+<div class="soon">
+  <h3>Probably next</h3>
+  <ul>
+    <li><b>ROP chain builder.</b> Drag gadgets into a stack and watch RIP walk through them.</li>
+    <li><b>ASLR entropy.</b> Reload a thousand times and see the histogram of where libc landed,
+    on 32-bit against 64-bit.</li>
+    <li><b>Integer overflow to heap overflow.</b> The size calculation that wraps, and the
+    undersized allocation it produces.</li>
+  </ul>
+</div>
+
+<p class="why"><b>A note on what these are not.</b> None of these run real code or touch real
+memory. They are models, and a model is only useful if it is honest about where it stops, so each
+page states its own simplifications. The goal is to make a primitive obvious enough that the real
+thing in gdb afterwards feels familiar rather than cryptic.</p>
+
+<footer>Part of <a href="https://r00tlv.me">r00tlv.me</a>. Free to link, embed or use in
+teaching.</footer>
+
+</main>
+<script>
+(function () {
+  var sel = ".tablewrap, pre.src, pre, .cline, .sbytes, .tbl-scroll, table";
+  Array.prototype.forEach.call(document.querySelectorAll(sel), function (el) {
+    if (el.scrollWidth > el.clientWidth + 2 && !el.hasAttribute("tabindex")) {
+      el.setAttribute("tabindex", "0");
+      el.setAttribute("role", "region");
+      if (!el.hasAttribute("aria-label")) el.setAttribute("aria-label", "Scrollable content");
+      el.classList.add("js-scrollable");
+    }
+  });
+})();
+</script>
+</body>
+</html>

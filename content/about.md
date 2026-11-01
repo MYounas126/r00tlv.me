@@ -17,7 +17,6 @@ links:
   - { name: "github",     title: "GitHub",     url: "https://github.com/MYounas126" }
   - { name: "linkedin",   title: "LinkedIn",   url: "https://www.linkedin.com/in/myounasec/" }
   - { name: "medium",     title: "Medium",     url: "https://thehackboy.medium.com/" }
-  - { name: "hackthebox", title: "HackTheBox", url: "https://app.hackthebox.com/" }
 ---
 
 ## 👋 I'm Muhammad Younas a.k.a r00tlv ⚡
@@ -58,4 +57,3 @@ A Cyber Security graduate with an avid interest in breaking and building things.
 - GitHub: [MYounas126](https://github.com/MYounas126)
 - LinkedIn: [myounasec](https://www.linkedin.com/in/myounasec/)
 - Medium: [thehackboy](https://thehackboy.medium.com/)
-- HackTheBox: [thehackboy](https://app.hackthebox.com/)

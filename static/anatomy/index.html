@@ -1,0 +1,367 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Anatomy: animated diagrams of how machines actually work | r00tlv</title>
+<meta name="description" content="A library of hand-built animated diagrams covering registers, the stack, call and ret, format strings, the compilation pipeline and symbol stripping. Free to embed with attribution.">
+<link rel="canonical" href="https://r00tlv.me/anatomy/">
+<meta name="robots" content="index, follow">
+<meta property="og:title" content="Anatomy: animated diagrams of how machines actually work">
+<meta property="og:description" content="Hand-built animated diagrams of registers, the stack, call and ret, format strings and the compilation pipeline. Free to embed.">
+<meta property="og:url" content="https://r00tlv.me/anatomy/">
+<meta property="og:type" content="website">
+<link rel="icon" href="/favicon.ico">
+<style>
+:root{
+  --bg:#12161f; --panel:#1a2030; --sunk:#161b28; --stroke:#2c3648; --edge:#626e84;
+  --txt:#e6edf3; --sub:#8b98ad; --dim:#808b9e;
+  --cyan:#56d4dd; --green:#62d38a; --amber:#f2b544;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--txt);font-family:var(--mono);
+  font-size:15px;line-height:1.6;-webkit-font-smoothing:antialiased}
+.wrap{max-width:900px;margin:0 auto;padding-inline:20px;padding-block:34px 70px}
+a{color:var(--cyan);text-decoration:none}
+a:hover{text-decoration:underline}
+.back{font-size:13px;color:var(--sub)}
+h1{font-size:clamp(23px,4.4vw,31px);font-weight:700;margin:18px 0 10px;line-height:1.2}
+.lede{color:var(--sub);font-size:14.5px;margin:0;max-width:66ch}
+.lede + .lede{margin-top:11px}
+.meta{font-size:12.5px;color:var(--dim);margin:16px 0 0}
+
+.grid{display:flex;flex-direction:column;gap:30px;margin-top:38px}
+.card{margin:0;background:var(--panel);border:1px solid var(--stroke);border-radius:10px;
+  padding:18px;display:flex;flex-direction:column;gap:13px}
+.card:target{border-color:var(--cyan)}
+.chead{display:flex;align-items:baseline;justify-content:space-between;gap:12px;order:-1}
+.chead h2{font-size:15.5px;font-weight:700;margin:0;line-height:1.3;color:var(--txt)}
+.anchor{color:var(--dim);font-size:14px;text-decoration:none}
+.anchor:hover{color:var(--cyan)}
+.card img{display:block;width:100%;border-radius:6px;background:#12161f}
+.cdesc{margin:0;font-size:13.5px;color:var(--sub);line-height:1.6;max-width:70ch}
+.crow{display:flex;gap:10px;flex-wrap:wrap;align-items:center;
+  border-top:1px solid var(--stroke);padding-top:12px}
+.cpost{font-size:12.5px}
+.cembed{background:var(--sunk);border:1px solid var(--edge);color:var(--sub);
+  font-family:var(--mono);font-size:12px;padding:5px 10px;border-radius:5px;cursor:pointer}
+.cembed:hover{color:var(--txt);border-color:var(--sub)}
+.cembed:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
+.cembed.ok{color:var(--green);border-color:var(--green)}
+
+.lic{margin-top:40px;background:var(--sunk);border:1px solid var(--stroke);border-radius:9px;
+  padding:17px 19px;font-size:13.5px;color:var(--sub);line-height:1.6}
+.lic b{color:var(--txt)}
+footer{margin-top:38px;padding-top:18px;border-top:1px solid var(--stroke);
+  font-size:12.5px;color:var(--dim)}
+@media (prefers-reduced-motion:reduce){.cembed{transition:none}}
+@media (max-width:620px){.card{padding:14px}.chead h2{font-size:14.5px}}
+
+/* Horizontal scroll containers must be keyboard-operable (WCAG 2.1.1).
+   Chrome and Safari only allow arrow-key scrolling when the container
+   is focusable, so each is given tabindex=0 by the script below. */
+[tabindex="0"]:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
+
+/* LINK UNDERLINE: WCAG 1.4.1. A link inside a paragraph must be
+   distinguishable without relying on hue, and our cyan measures under 2:1
+   against the surrounding text. Standalone block links (nav, cards) carry
+   their own position and box, so they stay underline-free. */
+p a, li a, figcaption a, .lic a, .note a, .why a, footer a, .cdesc a{
+  text-decoration:underline; text-underline-offset:2px;
+  text-decoration-thickness:1px; text-decoration-color:color-mix(in srgb,var(--cyan) 55%, transparent);
+}
+p a:hover, li a:hover, footer a:hover{text-decoration-color:var(--cyan)}
+</style>
+</head>
+<body>
+<main class="wrap">
+
+<div class="back"><a href="/">&larr; r00tlv</a> &middot; <a href="/posts/">posts</a> &middot; <a href="/lab/">lab</a></div>
+
+<h1>Anatomy</h1>
+<p class="lede">17 animated diagrams of how a machine actually behaves, built by hand
+rather than generated. Each one isolates a single idea and shows it moving, because most of these
+are far easier to watch than to read about.</p>
+<p class="lede">They are pure SVG with CSS keyframes. No JavaScript, no library, no network request,
+and they animate the same way in a blog post, a slide deck or a README.</p>
+<p class="meta">Press <b>copy embed</b> on any diagram to take it with you.</p>
+
+<div class="grid">
+<figure class="card" id="cpu-01-memory-is-paper">
+  <figcaption class="chead">
+    <h2>Memory is just a sheet of paper</h2>
+    <a class="anchor" href="#cpu-01-memory-is-paper" aria-label="Link to Memory is just a sheet of paper">#</a>
+  </figcaption>
+  <img src="/img/posts/cpu/cpu-01-memory-is-paper.svg" alt="Memory as a sheet of paper with the instruction pointer moving down line by line" width="820" height="440"
+       loading="lazy" decoding="async" style="max-width:100%;height:auto;aspect-ratio:820/440">
+  <p class="cdesc">Memory is a numbered list of bytes and the instruction pointer is a cursor into it. Every address you will ever see in a debugger is a line number in this notebook.</p>
+  <div class="crow">
+    <a class="cpost" href="/posts/how-a-cpu-actually-works/">from the post &rarr;</a>
+    <button type="button" class="cembed" data-embed="&lt;img src="https://r00tlv.me/img/posts/cpu/cpu-01-memory-is-paper.svg" alt="Memory as a sheet of paper with the instruction pointer moving down line by line" width="820" height="440" loading="lazy" style="max-width:100%;height:auto"&gt;">copy embed</button>
+  </div>
+</figure>
+<figure class="card" id="cpu-02-registers-and-flags">
+  <figcaption class="chead">
+    <h2>Registers are the CPU&#x27;s variables</h2>
+    <a class="anchor" href="#cpu-02-registers-and-flags" aria-label="Link to Registers are the CPU&#x27;s variables">#</a>
+  </figcaption>
+  <img src="/img/posts/cpu/cpu-02-registers-and-flags.svg" alt="Registers changing value as mov, add and sub execute, and the zero flag switching on" width="820" height="430"
+       loading="lazy" decoding="async" style="max-width:100%;height:auto;aspect-ratio:820/430">
+  <p class="cdesc">Registers are the only place arithmetic happens. Watch EAX change as mov, add and sub run, then watch the zero flag turn on when the result reaches zero. That single bit is what every if statement is built on.</p>
+  <div class="crow">
+    <a class="cpost" href="/posts/how-a-cpu-actually-works/">from the post &rarr;</a>
+    <button type="button" class="cembed" data-embed="&lt;img src="https://r00tlv.me/img/posts/cpu/cpu-02-registers-and-flags.svg" alt="Registers changing value as mov, add and sub execute, and the zero flag switching on" width="820" height="430" loading="lazy" style="max-width:100%;height:auto"&gt;">copy embed</button>
+  </div>
+</figure>
+<figure class="card" id="cpu-03-fetch-decode-execute">
+  <figcaption class="chead">
+    <h2>The entire job of a CPU, on repeat</h2>
+    <a class="anchor" href="#cpu-03-fetch-decode-execute" aria-label="Link to The entire job of a CPU, on repeat">#</a>
+  </figcaption>
+  <img src="/img/posts/cpu/cpu-03-fetch-decode-execute.svg" alt="The fetch decode execute cycle with a highlight travelling between the four stages" width="820" height="340"
+       loading="lazy" decoding="async" style="max-width:100%;height:auto;aspect-ratio:820/340">
+  <p class="cdesc">Read the line, work out what it means, carry it out, move on, a few billion times a second. There is no fifth step, and nothing happens on a computer unless RIP is pointing at it.</p>
+  <div class="crow">
+    <a class="cpost" href="/posts/how-a-cpu-actually-works/">from the post &rarr;</a>
+    <button type="button" class="cembed" data-embed="&lt;img src="https://r00tlv.me/img/posts/cpu/cpu-03-fetch-decode-execute.svg" alt="The fetch decode execute cycle with a highlight travelling between the four stages" width="820" height="340" loading="lazy" style="max-width:100%;height:auto"&gt;">copy embed</button>
+  </div>
+</figure>
+<figure class="card" id="cpu-04-load-and-store">
+  <figcaption class="chead">
+    <h2>What does not fit in registers lives in memory</h2>
+    <a class="anchor" href="#cpu-04-load-and-store" aria-label="Link to What does not fit in registers lives in memory">#</a>
+  </figcaption>
+  <img src="/img/posts/cpu/cpu-04-load-and-store.svg" alt="A value travelling from memory into a register and back again, showing load and store" width="820" height="400"
+       loading="lazy" decoding="async" style="max-width:100%;height:auto;aspect-ratio:820/400">
+  <p class="cdesc">Sixteen registers will not hold a program&#x27;s data, so most of it lives in memory and visits a register only when the CPU needs to work on it. Square brackets mean what they mean in Python.</p>
+  <div class="crow">
+    <a class="cpost" href="/posts/how-a-cpu-actually-works/">from the post &rarr;</a>
+    <button type="button" class="cembed" data-embed="&lt;img src="https://r00tlv.me/img/posts/cpu/cpu-04-load-and-store.svg" alt="A value travelling from memory into a register and back again, showing load and store" width="820" height="400" loading="lazy" style="max-width:100%;height:auto"&gt;">copy embed</button>
+  </div>
+</figure>
+<figure class="card" id="cpu-05-stack-push-pop">
+  <figcaption class="chead">
+    <h2>The stack grows DOWNWARD</h2>
+    <a class="anchor" href="#cpu-05-stack-push-pop" aria-label="Link to The stack grows DOWNWARD">#</a>
+  </figcaption>
+  <img src="/img/posts/cpu/cpu-05-stack-push-pop.svg" alt="The stack growing downward as push and pop run, with the stack pointer moving and popped values left behind as stale data" width="820" height="470"
+       loading="lazy" decoding="async" style="max-width:100%;height:auto;aspect-ratio:820/470">
+  <p class="cdesc">The stack grows towards lower addresses, which is the single fact that lets a buffer overflow reach a return address. Note also that pop erases nothing, it only moves the stack pointer back up.</p>
+  <div class="crow">
+    <a class="cpost" href="/posts/how-a-cpu-actually-works/">from the post &rarr;</a>
+    <button type="button" class="cembed" data-embed="&lt;img src="https://r00tlv.me/img/posts/cpu/cpu-05-stack-push-pop.svg" alt="The stack growing downward as push and pop run, with the stack pointer moving and popped values left behind as stale data" width="820" height="470" loading="lazy" style="max-width:100%;height:auto"&gt;">copy embed</button>
+  </div>
+</figure>
+<figure class="card" id="cpu-06-call-and-ret">
+  <figcaption class="chead">
+    <h2>call and ret: the stack remembers where you came from</h2>
+    <a class="anchor" href="#cpu-06-call-and-ret" aria-label="Link to call and ret: the stack remembers where you came from">#</a>
+  </figcaption>
+  <img src="/img/posts/cpu/cpu-06-call-and-ret.svg" alt="A call instruction pushing the return address onto the stack and ret popping it back into the instruction pointer" width="820" height="470"
+       loading="lazy" decoding="async" style="max-width:100%;height:auto;aspect-ratio:820/470">
+  <p class="cdesc">call pushes the address of the next instruction and jumps; ret pops that address back into RIP. The return address is ordinary writable memory sitting beside your buffers, which is where stack overflows cash out.</p>
+  <div class="crow">
+    <a class="cpost" href="/posts/how-a-cpu-actually-works/">from the post &rarr;</a>
+    <button type="button" class="cembed" data-embed="&lt;img src="https://r00tlv.me/img/posts/cpu/cpu-06-call-and-ret.svg" alt="A call instruction pushing the return address onto the stack and ret popping it back into the instruction pointer" width="820" height="470" loading="lazy" style="max-width:100%;height:auto"&gt;">copy embed</button>
+  </div>
+</figure>
+<figure class="card" id="cpu-07-conditional-branch">
+  <figcaption class="chead">
+    <h2>A branch is a jump that asks a flag first</h2>
+    <a class="anchor" href="#cpu-07-conditional-branch" aria-label="Link to A branch is a jump that asks a flag first">#</a>
+  </figcaption>
+  <img src="/img/posts/cpu/cpu-07-conditional-branch.svg" alt="The same je instruction taking the jump when the zero flag is set and falling through when it is not" width="820" height="450"
+       loading="lazy" decoding="async" style="max-width:100%;height:auto;aspect-ratio:820/450">
+  <p class="cdesc">The same je instruction run twice. Only the zero flag differs and the path changes completely. cmp is a subtraction that throws the answer away and keeps the flags.</p>
+  <div class="crow">
+    <a class="cpost" href="/posts/how-a-cpu-actually-works/">from the post &rarr;</a>
+    <button type="button" class="cembed" data-embed="&lt;img src="https://r00tlv.me/img/posts/cpu/cpu-07-conditional-branch.svg" alt="The same je instruction taking the jump when the zero flag is set and falling through when it is not" width="820" height="450" loading="lazy" style="max-width:100%;height:auto"&gt;">copy embed</button>
+  </div>
+</figure>
+<figure class="card" id="cpu-08-assembly-is-just-numbers">
+  <figcaption class="chead">
+    <h2>Assembly is not what the CPU reads. Numbers are.</h2>
+    <a class="anchor" href="#cpu-08-assembly-is-just-numbers" aria-label="Link to Assembly is not what the CPU reads. Numbers are.">#</a>
+  </figcaption>
+  <img src="/img/posts/cpu/cpu-08-assembly-is-just-numbers.svg" alt="The bytes B8 05 00 00 00 being decoded into the instruction mov eax 5, showing opcode and little endian operand" width="820" height="430"
+       loading="lazy" decoding="async" style="max-width:100%;height:auto;aspect-ratio:820/430">
+  <p class="cdesc">mov eax, 5 does not exist in memory. B8 05 00 00 00 exists in memory. A disassembler turns the bytes back into text for your benefit, which is why patching a program means changing bytes.</p>
+  <div class="crow">
+    <a class="cpost" href="/posts/how-a-cpu-actually-works/">from the post &rarr;</a>
+    <button type="button" class="cembed" data-embed="&lt;img src="https://r00tlv.me/img/posts/cpu/cpu-08-assembly-is-just-numbers.svg" alt="The bytes B8 05 00 00 00 being decoded into the instruction mov eax 5, showing opcode and little endian operand" width="820" height="430" loading="lazy" style="max-width:100%;height:auto"&gt;">copy embed</button>
+  </div>
+</figure>
+<figure class="card" id="cpu-09-speed-hierarchy">
+  <figcaption class="chead">
+    <h2>Why &quot;keep it in registers&quot; is the whole optimisation game</h2>
+    <a class="anchor" href="#cpu-09-speed-hierarchy" aria-label="Link to Why &quot;keep it in registers&quot; is the whole optimisation game">#</a>
+  </figcaption>
+  <img src="/img/posts/cpu/cpu-09-speed-hierarchy.svg" alt="Bar chart animating the relative cost of reading from registers, L1, L2, L3 cache and main memory" width="820" height="400"
+       loading="lazy" decoding="async" style="max-width:100%;height:auto;aspect-ratio:820/400">
+  <p class="cdesc">A register read is effectively free and a main memory read costs a couple of hundred cycles. That gap is why caches exist, and it is also why timing differences leak secrets.</p>
+  <div class="crow">
+    <a class="cpost" href="/posts/how-a-cpu-actually-works/">from the post &rarr;</a>
+    <button type="button" class="cembed" data-embed="&lt;img src="https://r00tlv.me/img/posts/cpu/cpu-09-speed-hierarchy.svg" alt="Bar chart animating the relative cost of reading from registers, L1, L2, L3 cache and main memory" width="820" height="400" loading="lazy" style="max-width:100%;height:auto"&gt;">copy embed</button>
+  </div>
+</figure>
+<figure class="card" id="cpu-10-register-windows">
+  <figcaption class="chead">
+    <h2>rax, eax, ax, al are ONE register, not four</h2>
+    <a class="anchor" href="#cpu-10-register-windows" aria-label="Link to rax, eax, ax, al are ONE register, not four">#</a>
+  </figcaption>
+  <img src="/img/posts/cpu/cpu-10-register-windows.svg" alt="One 64-bit register with rax, eax, ax, ah and al highlighted in turn as windows onto the same storage" width="820" height="400"
+       loading="lazy" decoding="async" style="max-width:100%;height:auto;aspect-ratio:820/400">
+  <p class="cdesc">rax, eax, ax and al are not four registers. They are four windows onto the same eight bytes, and the same pattern holds for every other register.</p>
+  <div class="crow">
+    <a class="cpost" href="/posts/how-a-cpu-actually-works/">from the post &rarr;</a>
+    <button type="button" class="cembed" data-embed="&lt;img src="https://r00tlv.me/img/posts/cpu/cpu-10-register-windows.svg" alt="One 64-bit register with rax, eax, ax, ah and al highlighted in turn as windows onto the same storage" width="820" height="400" loading="lazy" style="max-width:100%;height:auto"&gt;">copy embed</button>
+  </div>
+</figure>
+<figure class="card" id="cpu-11-zero-extension-trap">
+  <figcaption class="chead">
+    <h2>The trap that catches everyone exactly once</h2>
+    <a class="anchor" href="#cpu-11-zero-extension-trap" aria-label="Link to The trap that catches everyone exactly once">#</a>
+  </figcaption>
+  <img src="/img/posts/cpu/cpu-11-zero-extension-trap.svg" alt="Writing to eax wipes the upper 32 bits of rax to zero while writing to al leaves them untouched" width="820" height="420"
+       loading="lazy" decoding="async" style="max-width:100%;height:auto;aspect-ratio:820/420">
+  <p class="cdesc">Writing to a 32-bit register wipes the upper half of the 64-bit register to zero. Writing to an 8-bit or 16-bit one does not. When a register mysteriously changes in a disassembly, this is usually the reason.</p>
+  <div class="crow">
+    <a class="cpost" href="/posts/how-a-cpu-actually-works/">from the post &rarr;</a>
+    <button type="button" class="cembed" data-embed="&lt;img src="https://r00tlv.me/img/posts/cpu/cpu-11-zero-extension-trap.svg" alt="Writing to eax wipes the upper 32 bits of rax to zero while writing to al leaves them untouched" width="820" height="420" loading="lazy" style="max-width:100%;height:auto"&gt;">copy embed</button>
+  </div>
+</figure>
+<figure class="card" id="cpu-12-calling-convention">
+  <figcaption class="chead">
+    <h2>How arguments get into a function</h2>
+    <a class="anchor" href="#cpu-12-calling-convention" aria-label="Link to How arguments get into a function">#</a>
+  </figcaption>
+  <img src="/img/posts/cpu/cpu-12-calling-convention.svg" alt="Function arguments being loaded into rdi rsi and rdx before a call, and the result coming back in rax" width="820" height="430"
+       loading="lazy" decoding="async" style="max-width:100%;height:auto;aspect-ratio:820/430">
+  <p class="cdesc">There are no parameters at this level, only agreed-upon registers filled in before the call. Linux uses rdi, rsi, rdx, rcx, r8 and r9. Windows uses a different order, because it is an agreement rather than a hardware rule.</p>
+  <div class="crow">
+    <a class="cpost" href="/posts/how-a-cpu-actually-works/">from the post &rarr;</a>
+    <button type="button" class="cembed" data-embed="&lt;img src="https://r00tlv.me/img/posts/cpu/cpu-12-calling-convention.svg" alt="Function arguments being loaded into rdi rsi and rdx before a call, and the result coming back in rax" width="820" height="430" loading="lazy" style="max-width:100%;height:auto"&gt;">copy embed</button>
+  </div>
+</figure>
+<figure class="card" id="cpu-13-addressing-modes">
+  <figcaption class="chead">
+    <h2>The scary-looking brackets are just array indexing</h2>
+    <a class="anchor" href="#cpu-13-addressing-modes" aria-label="Link to The scary-looking brackets are just array indexing">#</a>
+  </figcaption>
+  <img src="/img/posts/cpu/cpu-13-addressing-modes.svg" alt="The address expression rbx plus rcx times four plus eight being worked out step by step into a final memory address" width="820" height="420"
+       loading="lazy" decoding="async" style="max-width:100%;height:auto;aspect-ratio:820/420">
+  <p class="cdesc">[rbx + rcx*4 + 8] is array[i] written the long way: base, index, scale and offset, resolved inside a single instruction. The scale is always 1, 2, 4 or 8 because those are the sizes that matter.</p>
+  <div class="crow">
+    <a class="cpost" href="/posts/how-a-cpu-actually-works/">from the post &rarr;</a>
+    <button type="button" class="cembed" data-embed="&lt;img src="https://r00tlv.me/img/posts/cpu/cpu-13-addressing-modes.svg" alt="The address expression rbx plus rcx times four plus eight being worked out step by step into a final memory address" width="820" height="420" loading="lazy" style="max-width:100%;height:auto"&gt;">copy embed</button>
+  </div>
+</figure>
+<figure class="card" id="c-01-format-string">
+  <figcaption class="chead">
+    <h2>The same data. One of these is a vulnerability.</h2>
+    <a class="anchor" href="#c-01-format-string" aria-label="Link to The same data. One of these is a vulnerability.">#</a>
+  </figcaption>
+  <img src="/img/posts/re/c-01-format-string.svg" alt="Comparing printf with a constant format string against printf where the user controls the format string, showing each specifier consuming a stack value" width="820" height="420"
+       loading="lazy" decoding="async" style="max-width:100%;height:auto;aspect-ratio:820/420">
+  <p class="cdesc">printf(&quot;%s&quot;, user) and printf(user) look alike and only one of them is a vulnerability. Watch each specifier consume a value off the stack, and watch %n turn a read into an arbitrary write.</p>
+  <div class="crow">
+    <a class="cpost" href="/posts/four-cves-in-twelve-lines-of-c/">from the post &rarr;</a>
+    <button type="button" class="cembed" data-embed="&lt;img src="https://r00tlv.me/img/posts/re/c-01-format-string.svg" alt="Comparing printf with a constant format string against printf where the user controls the format string, showing each specifier consuming a stack value" width="820" height="420" loading="lazy" style="max-width:100%;height:auto"&gt;">copy embed</button>
+  </div>
+</figure>
+<figure class="card" id="c-02-pwnkit-argv-envp">
+  <figcaption class="chead">
+    <h2>argc can be zero, and argv sits next to envp</h2>
+    <a class="anchor" href="#c-02-pwnkit-argv-envp" aria-label="Link to argc can be zero, and argv sits next to envp">#</a>
+  </figcaption>
+  <img src="/img/posts/re/c-02-pwnkit-argv-envp.svg" alt="With argc zero the argv array is empty, so indexing argv one reads past its NULL terminator into the adjacent environment array" width="820" height="400"
+       loading="lazy" decoding="async" style="max-width:100%;height:auto;aspect-ratio:820/400">
+  <p class="cdesc">execve lets a caller launch a program with no arguments at all, so argc can be zero and argv[0] can be NULL. Because argv and envp sit beside each other, indexing past the end walks into attacker-controlled environment. That is CVE-2021-4034.</p>
+  <div class="crow">
+    <a class="cpost" href="/posts/four-cves-in-twelve-lines-of-c/">from the post &rarr;</a>
+    <button type="button" class="cembed" data-embed="&lt;img src="https://r00tlv.me/img/posts/re/c-02-pwnkit-argv-envp.svg" alt="With argc zero the argv array is empty, so indexing argv one reads past its NULL terminator into the adjacent environment array" width="820" height="400" loading="lazy" style="max-width:100%;height:auto"&gt;">copy embed</button>
+  </div>
+</figure>
+<figure class="card" id="re-01-compile-pipeline">
+  <figcaption class="chead">
+    <h2>Every build stage throws something away</h2>
+    <a class="anchor" href="#re-01-compile-pipeline" aria-label="Link to Every build stage throws something away">#</a>
+  </figcaption>
+  <img src="/img/posts/re/re-01-compile-pipeline.svg" alt="The four compilation stages, with each piece of source information being struck out as the stage that discards it runs" width="820" height="430"
+       loading="lazy" decoding="async" style="max-width:100%;height:auto;aspect-ratio:820/430">
+  <p class="cdesc">Four stages, each discarding something. Comments die at pre-processing, names and control-flow shape die at compilation, and .symtab dies at link time. Assembly is the only near-lossless step.</p>
+  <div class="crow">
+    <a class="cpost" href="/posts/what-survives-compilation/">from the post &rarr;</a>
+    <button type="button" class="cembed" data-embed="&lt;img src="https://r00tlv.me/img/posts/re/re-01-compile-pipeline.svg" alt="The four compilation stages, with each piece of source information being struck out as the stage that discards it runs" width="820" height="430" loading="lazy" style="max-width:100%;height:auto"&gt;">copy embed</button>
+  </div>
+</figure>
+<figure class="card" id="re-02-strip-symbols">
+  <figcaption class="chead">
+    <h2>strip removes .symtab, never .dynsym</h2>
+    <a class="anchor" href="#re-02-strip-symbols" aria-label="Link to strip removes .symtab, never .dynsym">#</a>
+  </figcaption>
+  <img src="/img/posts/re/re-02-strip-symbols.svg" alt="Running strip on a binary removes the local symbol table while the dynamic symbols for imported functions remain" width="820" height="380"
+       loading="lazy" decoding="async" style="max-width:100%;height:auto;aspect-ratio:820/380">
+  <p class="cdesc">strip removes .symtab but never .dynsym, because the loader needs the imports. You lose the names of the program&#x27;s own functions and keep the names of everything it calls. That asymmetry is the foothold.</p>
+  <div class="crow">
+    <a class="cpost" href="/posts/what-survives-compilation/">from the post &rarr;</a>
+    <button type="button" class="cembed" data-embed="&lt;img src="https://r00tlv.me/img/posts/re/re-02-strip-symbols.svg" alt="Running strip on a binary removes the local symbol table while the dynamic symbols for imported functions remain" width="820" height="380" loading="lazy" style="max-width:100%;height:auto"&gt;">copy embed</button>
+  </div>
+</figure>
+</div>
+
+<div class="lic">
+<b>Use them.</b> These are free to embed, reuse and adapt in posts, talks, courses and
+documentation, commercial or not. The only thing asked in return is a link back to
+<a href="https://r00tlv.me">r00tlv.me</a> somewhere near the diagram. If you are teaching with
+them and want a variation that is not here, that is a reasonable thing to ask for.
+</div>
+
+<footer>Part of <a href="https://r00tlv.me">r00tlv.me</a>, where most of these first appeared
+inside longer writeups.</footer>
+
+</main>
+<script>
+document.addEventListener('click', function (e) {
+  var b = e.target.closest('.cembed');
+  if (!b) return;
+  var txt = b.getAttribute('data-embed');
+  var done = function () {
+    var old = b.textContent;
+    b.textContent = 'copied'; b.classList.add('ok');
+    setTimeout(function () { b.textContent = old; b.classList.remove('ok'); }, 1600);
+  };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(txt).then(done, function () { fallback(txt, done, b); });
+  } else { fallback(txt, done, b); }
+});
+function fallback(txt, done, b) {
+  var t = document.createElement('textarea');
+  t.value = txt; t.setAttribute('readonly', ''); t.style.position = 'fixed'; t.style.opacity = '0';
+  document.body.appendChild(t); t.select();
+  try { document.execCommand('copy'); done(); }
+  catch (err) {
+    // Some browsers refuse execCommand outright. Say so rather than
+    // leaving the button looking as though nothing happened.
+    b.textContent = 'copy failed';
+    setTimeout(function () { b.textContent = 'copy embed'; }, 1800);
+  }
+  document.body.removeChild(t);
+}
+</script>
+<script>
+(function () {
+  var sel = ".tablewrap, pre.src, pre, .cline, .sbytes, .tbl-scroll, table";
+  Array.prototype.forEach.call(document.querySelectorAll(sel), function (el) {
+    if (el.scrollWidth > el.clientWidth + 2 && !el.hasAttribute("tabindex")) {
+      el.setAttribute("tabindex", "0");
+      el.setAttribute("role", "region");
+      if (!el.hasAttribute("aria-label")) el.setAttribute("aria-label", "Scrollable content");
+      el.classList.add("js-scrollable");
+    }
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,369 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Smash a stack in your browser | r00tlv</title>
+<meta name="description" content="Type into a 16-byte buffer and watch the bytes run past it into the saved base pointer and the return address. An interactive stack overflow, no VM required.">
+<link rel="canonical" href="https://r00tlv.me/lab/stack-smash/">
+<meta name="robots" content="index, follow">
+<meta property="og:title" content="Smash a stack in your browser">
+<meta property="og:description" content="Type into a 16-byte buffer and watch the bytes run past it into the saved base pointer and the return address.">
+<meta property="og:url" content="https://r00tlv.me/lab/stack-smash/">
+<meta property="og:type" content="article">
+<link rel="icon" href="/favicon.ico">
+<style>
+:root{
+  --bg:#12161f; --panel:#1a2030; --sunk:#161b28; --stroke:#2c3648; --edge:#626e84;
+  --txt:#e6edf3; --sub:#8b98ad; --dim:#808b9e;
+  --cyan:#56d4dd; --green:#62d38a; --amber:#f2b544; --red:#ed8796;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--txt);font-family:var(--mono);
+  font-size:15px;line-height:1.6;-webkit-font-smoothing:antialiased}
+.wrap{max-width:860px;margin:0 auto;padding-inline:20px;padding-block:34px 70px}
+a{color:var(--cyan);text-decoration:none}
+a:hover{text-decoration:underline}
+.back{font-size:13px;color:var(--sub)}
+h1{font-size:clamp(23px,4.4vw,31px);font-weight:700;margin:18px 0 8px;line-height:1.2}
+.lede{color:var(--sub);font-size:14.5px;margin:0 0 26px;max-width:66ch}
+h2{font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--cyan);margin:30px 0 12px}
+
+.controls{display:flex;flex-direction:column;gap:12px;margin-bottom:22px}
+.inrow{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+label.lbl{font-size:12px;color:var(--sub);letter-spacing:.06em;text-transform:uppercase}
+input[type=text]{flex:1 1 300px;min-width:0;background:var(--sunk);border:1px solid var(--edge);
+  color:var(--txt);font-family:var(--mono);font-size:14px;padding:10px 12px;border-radius:6px}
+input[type=text]:focus{outline:2px solid var(--cyan);outline-offset:1px;border-color:var(--cyan)}
+.presets{display:flex;gap:7px;flex-wrap:wrap}
+button{background:var(--panel);border:1px solid var(--edge);color:var(--sub);
+  font-family:var(--mono);font-size:12.5px;padding:6px 11px;border-radius:5px;cursor:pointer}
+button:hover{color:var(--txt);border-color:var(--sub)}
+button:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
+.toggle{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--sub);cursor:pointer}
+.toggle input{accent-color:var(--cyan);width:15px;height:15px;cursor:pointer}
+
+.counter{font-size:13px;color:var(--sub);display:flex;gap:7px;flex-wrap:wrap;align-items:baseline}
+.counter b{color:var(--txt);font-weight:700;font-variant-numeric:tabular-nums}
+
+.stack{border:1px solid var(--stroke);border-radius:10px;overflow:hidden;background:var(--panel)}
+.srow{display:grid;grid-template-columns:118px 1fr;gap:0;border-bottom:1px solid var(--stroke)}
+.srow:last-child{border-bottom:0}
+.saddr{background:var(--sunk);padding:11px 10px;font-size:11.5px;color:var(--sub);
+  border-right:1px solid var(--stroke);display:flex;flex-direction:column;gap:2px;justify-content:center}
+.saddr .nm{color:var(--txt);font-size:12px;font-weight:700}
+.sbytes{padding:9px 10px;display:flex;gap:4px;flex-wrap:nowrap;overflow-x:auto;align-items:center}
+.byte{min-width:25px;text-align:center;padding:4px 2px;border-radius:4px;font-size:12.5px;
+  border:1px solid transparent;transition:background .12s,color .12s,border-color .12s}
+.b-orig{color:var(--dim);background:transparent}
+.b-safe{color:var(--bg);background:var(--cyan);font-weight:700}
+.b-rbp{color:var(--bg);background:var(--amber);font-weight:700}
+.b-ret{color:var(--bg);background:var(--red);font-weight:700}
+.b-canary{color:var(--bg);background:#c678dd;font-weight:700}
+.b-canaryok{color:#c678dd;border-color:#c678dd}
+.ascii{margin-left:10px;padding-left:10px;border-left:1px solid var(--stroke);
+  font-size:12.5px;color:var(--sub);white-space:pre}
+
+.zone{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--sub);margin-top:10px}
+.zone span{display:flex;align-items:center;gap:6px}
+.sw{width:11px;height:11px;border-radius:3px;display:inline-block}
+
+.verdict{margin-top:18px;border:1px solid var(--stroke);border-left-width:4px;border-radius:8px;
+  padding:15px 17px;background:var(--sunk);display:flex;flex-direction:column;gap:7px}
+.verdict .vt{font-size:13px;font-weight:700;letter-spacing:.04em}
+.verdict .vd{font-size:13.5px;color:var(--sub);line-height:1.55}
+.verdict code{color:var(--txt)}
+.v-ok{border-left-color:var(--green)} .v-ok .vt{color:var(--green)}
+.v-warn{border-left-color:var(--amber)} .v-warn .vt{color:var(--amber)}
+.v-bad{border-left-color:var(--red)} .v-bad .vt{color:var(--red)}
+.v-canary{border-left-color:#c678dd} .v-canary .vt{color:#c678dd}
+
+pre.src{background:var(--sunk);border:1px solid var(--stroke);border-radius:8px;
+  padding:14px 16px;overflow-x:auto;font-size:13px;line-height:1.55;margin:0}
+pre.src .kw{color:#c678dd} pre.src .fn{color:var(--cyan)} pre.src .cm{color:var(--dim)}
+pre.src .st{color:var(--green)}
+.note{font-size:13.5px;color:var(--sub);line-height:1.6;max-width:66ch}
+.note b{color:var(--txt)}
+footer{margin-top:44px;padding-top:18px;border-top:1px solid var(--stroke);
+  font-size:12.5px;color:var(--dim)}
+@media (max-width:620px){
+  .srow{grid-template-columns:92px 1fr}
+  .saddr{font-size:10.5px;padding:9px 7px}
+  .byte{min-width:22px;font-size:11.5px}
+  .ascii{display:none}
+}
+@media (prefers-reduced-motion:reduce){.byte{transition:none}}
+
+/* Horizontal scroll containers must be keyboard-operable (WCAG 2.1.1).
+   Chrome and Safari only allow arrow-key scrolling when the container
+   is focusable, so each is given tabindex=0 by the script below. */
+[tabindex="0"]:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
+
+/* LINK UNDERLINE: WCAG 1.4.1. A link inside a paragraph must be
+   distinguishable without relying on hue, and our cyan measures under 2:1
+   against the surrounding text. Standalone block links (nav, cards) carry
+   their own position and box, so they stay underline-free. */
+p a, li a, figcaption a, .lic a, .note a, .why a, footer a, .cdesc a{
+  text-decoration:underline; text-underline-offset:2px;
+  text-decoration-thickness:1px; text-decoration-color:color-mix(in srgb,var(--cyan) 55%, transparent);
+}
+p a:hover, li a:hover, footer a:hover{text-decoration-color:var(--cyan)}
+</style>
+</head>
+<body>
+<main class="wrap">
+
+<div class="back"><a href="/">&larr; r00tlv</a> &middot; <a href="/posts/">posts</a></div>
+
+<h1>Smash a stack in your browser</h1>
+<p class="lede">Type into the 16-byte buffer below and watch where the extra bytes go. No VM, no
+gdb, nothing to install. This is the same thing <code>gets()</code> does to a real program.</p>
+
+<h2>The program</h2>
+<pre class="src"><span class="kw">void</span> <span class="fn">greet</span>(<span class="kw">void</span>) {
+    <span class="kw">char</span> buf[<span class="st">16</span>];
+    <span class="fn">gets</span>(buf);           <span class="cm">/* no bounds check, writes as far as you type */</span>
+    <span class="fn">printf</span>(<span class="st">"hi %s\n"</span>, buf);
+}                        <span class="cm">/* ret pops 8 bytes off the stack into RIP */</span></pre>
+
+<h2>Your input</h2>
+<div class="controls">
+  <div class="inrow">
+    <input type="text" id="payload" spellcheck="false" autocomplete="off"
+           placeholder="type here..." aria-label="Input written into the buffer">
+  </div>
+  <div class="presets">
+    <button type="button" data-p="younas">normal input</button>
+    <button type="button" data-p="AAAAAAAAAAAAAAAA">exactly 16</button>
+    <button type="button" data-p="AAAAAAAAAAAAAAAABBBBBBBB">+ saved RBP</button>
+    <button type="button" data-p="AAAAAAAAAAAAAAAABBBBBBBBCCCCCCCC">+ return address</button>
+    <button type="button" data-p="__WIN__">jump to win()</button>
+    <button type="button" data-p="">clear</button>
+  </div>
+  <label class="toggle"><input type="checkbox" id="canary">
+    compile with <code>-fstack-protector</code></label>
+  <div class="counter">
+    <span>wrote <b id="n">0</b> bytes into a <b>16</b>-byte buffer</span>
+    <span id="over"></span>
+  </div>
+</div>
+
+<h2>The stack, as it is right now</h2>
+<div class="stack" id="stack" aria-live="polite"></div>
+<div class="zone">
+  <span><i class="sw" style="background:var(--cyan)"></i>inside buf[16]</span>
+  <span id="z-canary" hidden><i class="sw" style="background:#c678dd"></i>stack canary</span>
+  <span><i class="sw" style="background:var(--amber)"></i>saved RBP</span>
+  <span><i class="sw" style="background:var(--red)"></i>return address</span>
+  <span><i class="sw" style="background:var(--dim)"></i>untouched</span>
+</div>
+
+<div class="verdict v-ok" id="verdict">
+  <div class="vt" id="vt">Nothing written yet</div>
+  <div class="vd" id="vd">Type something above, or press one of the buttons.</div>
+</div>
+
+<h2>What you are looking at</h2>
+<p class="note">Addresses increase from left to right and from bottom to top, which is the direction
+a hex dump reads. The stack itself grows <b>downward</b>, so <code>buf</code> sits at a
+<i>lower</i> address than the saved RBP and the return address that were pushed before it. That
+single fact is the whole bug: writing forward past the end of a buffer walks straight into the
+bookkeeping the function needs in order to return.</p>
+<p class="note">When <code>ret</code> executes it pops 8 bytes off the stack into RIP and jumps
+there. It has no way of telling your bytes apart from the address <code>call</code> originally
+saved. Turn on the stack protector above and a random value is placed between the buffer and the
+saved RBP; the function checks it before returning, so a linear overflow is caught instead of
+being exploited.</p>
+
+<footer>Part of <a href="https://r00tlv.me">r00tlv.me</a>. The addresses here are plausible rather
+than real, and the model is a 64-bit System V frame with no ASLR. Free to embed or link.</footer>
+
+</main>
+
+<script>
+(function () {
+  var RET_ORIG = [0x96,0x11,0x40,0x00,0x00,0x00,0x00,0x00];   // 0x401196
+  var RBP_ORIG = [0x50,0x2b,0x4a,0x8e,0xfd,0x7f,0x00,0x00];   // 0x7ffd8e4a2b50
+  var CAN_ORIG = [0x00,0xa3,0x7f,0x2e,0x91,0x44,0xb8,0xd2];   // low byte 00 on purpose
+  var WIN_ADDR = [0x89,0x12,0x40,0x00,0x00,0x00,0x00,0x00];   // 0x401289
+
+  var elIn = document.getElementById('payload');
+  var elStack = document.getElementById('stack');
+  var elN = document.getElementById('n');
+  var elOver = document.getElementById('over');
+  var elCanary = document.getElementById('canary');
+  var elZCan = document.getElementById('z-canary');
+  var elV = document.getElementById('verdict');
+  var elVT = document.getElementById('vt');
+  var elVD = document.getElementById('vd');
+
+  function bytesOf(s) {
+    var out = [], i, c;
+    for (i = 0; i < s.length; i++) {
+      c = s.charCodeAt(i);
+      if (c < 0x80) out.push(c);
+      else if (c < 0x800) { out.push(0xc0 | c >> 6, 0x80 | c & 63); }
+      else { out.push(0xe0 | c >> 12, 0x80 | c >> 6 & 63, 0x80 | c & 63); }
+    }
+    return out;
+  }
+  var hx = function (b) { return ('0' + b.toString(16)).slice(-2); };
+  var pr = function (b) { return (b >= 32 && b < 127) ? String.fromCharCode(b) : '.'; };
+  // The ASCII gutter prints bytes the visitor typed, and the stack dump is
+  // assembled as a string before it reaches innerHTML. Without this the
+  // printable range hands <, > and & straight to the parser, which is how a
+  // pasted <style> ended up rendering as a real element rather than as text.
+  var esc = function (t) {
+    return String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  };
+
+  function layout(useCanary) {
+    // bottom-up: buf(16), [canary(8)], saved rbp(8), ret(8)
+    var L = [{ nm: 'buf[0..7]', off: 0, kind: 'buf' },
+             { nm: 'buf[8..15]', off: 8, kind: 'buf' }];
+    var o = 16;
+    if (useCanary) { L.push({ nm: 'canary', off: o, kind: 'canary', orig: CAN_ORIG }); o += 8; }
+    L.push({ nm: 'saved RBP', off: o, kind: 'rbp', orig: RBP_ORIG }); o += 8;
+    L.push({ nm: 'return addr', off: o, kind: 'ret', orig: RET_ORIG });
+    return L;
+  }
+
+  function render() {
+    var useCanary = elCanary.checked;
+    elZCan.hidden = !useCanary;
+    var raw = elIn.value;
+    var bytes = (raw === '__WIN__') ? null : bytesOf(raw);
+
+    var L = layout(useCanary);
+    var retOff = L[L.length - 1].off;
+    var canOff = useCanary ? 16 : -1;
+    var rbpOff = L[L.length - 2].off;
+
+    if (bytes === null) {                      // the "jump to win()" preset
+      bytes = [];
+      for (var k = 0; k < retOff; k++) bytes.push(0x41);
+      for (var w = 0; w < 8; w++) bytes.push(WIN_ADDR[w]);
+    }
+    var n = bytes.length;
+
+    elN.textContent = n;
+    var ov = n - 16;
+    elOver.textContent = ov > 0 ? '— ' + ov + ' byte' + (ov === 1 ? '' : 's') + ' past the end' : '';
+    elOver.style.color = ov > 0 ? 'var(--red)' : 'var(--sub)';
+
+    // build rows top (high address) to bottom (low address).
+    // RBP points at the saved RBP by definition, so every label is measured
+    // from that row: a canary pushes buf further down, it does not move rbp.
+    var html = '';
+    for (var r = L.length - 1; r >= 0; r--) {
+      var row = L[r], cells = '', ascii = '';
+      var addr = row.off - rbpOff;
+      var lbl = (addr >= 0 ? 'rbp+' + addr : 'rbp-' + (-addr));
+      for (var i = 0; i < 8; i++) {
+        var off = row.off + i, cls, val;
+        if (off < n) {
+          val = bytes[off];
+          cls = row.kind === 'buf' ? 'b-safe'
+              : row.kind === 'canary' ? 'b-canary'
+              : row.kind === 'rbp' ? 'b-rbp' : 'b-ret';
+        } else {
+          val = row.orig ? row.orig[i] : null;
+          cls = row.kind === 'canary' ? 'b-canaryok' : 'b-orig';
+        }
+        cells += '<span class="byte ' + cls + '">' + (val === null ? '..' : hx(val)) + '</span>';
+        ascii += (val === null ? ' ' : pr(val));
+      }
+      html += '<div class="srow"><div class="saddr"><span class="nm">' + row.nm +
+              '</span><span>' + lbl + '</span></div>' +
+              '<div class="sbytes">' + cells + '<span class="ascii">' + esc(ascii) + '</span></div></div>';
+    }
+    elStack.innerHTML = html;
+
+    // verdict
+    var cls = 'v-ok', t, d;
+    var canHit = useCanary && n > canOff;
+    if (n === 0) {
+      t = 'Nothing written yet';
+      d = 'Type something above, or press one of the buttons.';
+    } else if (canHit) {
+      cls = 'v-canary';
+      t = '*** stack smashing detected ***: terminated';
+      d = 'You overwrote the canary at <code>rbp-8</code>. ' +
+          'The function epilogue compares it against the value stored at ' +
+          'boot, sees a mismatch and calls <code>__stack_chk_fail()</code>, which aborts the ' +
+          'process before <code>ret</code> ever runs. The overflow still happened, but it is ' +
+          'now a crash instead of a hijack.';
+    } else if (n <= 16) {
+      cls = 'v-ok';
+      t = 'Normal return';
+      d = 'Everything fits inside <code>buf</code>. <code>ret</code> pops the untouched ' +
+          '<code>0x401196</code> into RIP and execution carries on in the caller.';
+    } else if (n <= rbpOff + 8) {
+      cls = 'v-warn';
+      t = 'Saved RBP corrupted, return address still intact';
+      d = 'You are past the end of the buffer and into the saved base pointer. ' +
+          '<code>ret</code> still works because the return address is untouched, but the ' +
+          'caller now restores a bogus frame pointer. Anything it reads through RBP after ' +
+          'this is wrong. This is where strange, far-away crashes come from.';
+    } else {
+      var got = [], full = n >= retOff + 8;
+      for (var j = 0; j < 8; j++) got.push(j < (n - retOff) ? bytes[retOff + j] : RET_ORIG[j]);
+      var hex = '0x';
+      for (var z = 7; z >= 0; z--) hex += hx(got[z]);
+      cls = 'v-bad';
+      var isWin = full && got.every(function (b, idx) { return b === WIN_ADDR[idx]; });
+      if (isWin) {
+        t = 'RIP hijacked — you called win()';
+        d = '<code>ret</code> pops <code>' + hex + '</code> into RIP, which is the address of ' +
+            '<code>win()</code>. The function was never called by the program; you called it ' +
+            'by choosing the bytes that landed on the return address. That is the whole of ' +
+            'ret2win in one move.';
+      } else {
+        t = full ? 'RIP hijacked — control transferred to your bytes'
+                 : 'Return address partially overwritten';
+        d = '<code>ret</code> pops <code>' + hex + '</code> into RIP and jumps there. ' +
+            (full ? 'You chose all eight bytes, so you chose where the program goes next. ' +
+                    'With ASLR off and NX on, the next step is picking an address that is ' +
+                    'already executable rather than one spelled with the letter A.'
+                  : 'You clipped only the low bytes, which is often enough: the high bytes of ' +
+                    'a code address rarely change, so a short overflow can still redirect ' +
+                    'execution nearby.') +
+            ' Most likely outcome here is <code>SIGSEGV</code>, because ' + hex +
+            ' is not mapped executable.';
+      }
+    }
+    elV.className = 'verdict ' + cls;
+    elVT.textContent = t;
+    elVD.innerHTML = d;
+  }
+
+  elIn.addEventListener('input', render);
+  elCanary.addEventListener('change', render);
+  Array.prototype.forEach.call(document.querySelectorAll('.presets button'), function (b) {
+    b.addEventListener('click', function () {
+      elIn.value = b.getAttribute('data-p');
+      render();
+      elIn.focus();
+    });
+  });
+  render();
+})();
+</script>
+<script>
+(function () {
+  var sel = ".tablewrap, pre.src, pre, .cline, .sbytes, .tbl-scroll, table";
+  Array.prototype.forEach.call(document.querySelectorAll(sel), function (el) {
+    if (el.scrollWidth > el.clientWidth + 2 && !el.hasAttribute("tabindex")) {
+      el.setAttribute("tabindex", "0");
+      el.setAttribute("role", "region");
+      if (!el.hasAttribute("aria-label")) el.setAttribute("aria-label", "Scrollable content");
+      el.classList.add("js-scrollable");
+    }
+  });
+})();
+</script>
+</body>
+</html>

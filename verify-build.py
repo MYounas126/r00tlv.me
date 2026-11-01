@@ -174,6 +174,23 @@ if staged:
 
 print()
 print("=" * 72)
+print("5b. every sitemap URL has a file behind it")
+print("=" * 72)
+# layouts/sitemap.xml lists the self-contained pages in static/ by hand, because
+# Hugo never sees them as Pages. A typo there advertises a 404 to Google, which
+# is worse than the page being absent, so check every entry resolves.
+sm_all = re.findall(r"<loc>([^<]+)</loc>", sm)
+missing_loc = []
+for u in sm_all:
+    rel = u.replace(SITE, "").strip("/")
+    cand = os.path.join(PUB, rel) if rel else PUB
+    if not (os.path.isfile(cand) or os.path.isfile(os.path.join(cand, "index.html"))):
+        missing_loc.append(u)
+check(not missing_loc, f"all {len(sm_all)} sitemap URLs resolve to a file",
+      ", ".join(missing_loc[:4]) if missing_loc else "")
+
+print()
+print("=" * 72)
 print("6. every internal link and image resolves")
 print("=" * 72)
 imgs, links = set(), set()
@@ -212,7 +229,13 @@ if os.path.isfile(alias):
           "legacy GHSA URL still redirects")
 
 try:
-    ch = ET.parse(os.path.join(PUB, "rss.xml")).getroot().find("channel")
+    _rss = read(os.path.join(PUB, "rss.xml"))
+    # ElementTree will happily expand internal entities, so a feed carrying a
+    # DOCTYPE could stall CI. Hugo never emits one; anything that does is either
+    # a template bug or something that does not belong in the build.
+    if "<!DOCTYPE" in _rss or "<!ENTITY" in _rss:
+        raise ET.ParseError("rss.xml contains a DOCTYPE or ENTITY declaration")
+    ch = ET.fromstring(_rss).find("channel")
     titles = [i.find("title").text for i in ch.findall("item")]
     check(bool(titles), "rss.xml has items", f"{len(titles)} item(s)")
     check("About" not in titles, "About page did not leak into RSS")

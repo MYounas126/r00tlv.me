@@ -1,0 +1,55 @@
+{
+  "schema_version": "1.0",
+  "generated_at": "2026-11-01T12:35:26.868Z",
+  "git_head": "245834acd7b1e9d538631a38921d397af4d74fcf",
+  "worktree_digest": "7f987253fec27cfc426905ab6351ac27461577b1b3661a9a257f1fbf61e4c28b",
+  "base_ref": "main",
+  "scope": {
+    "mode": "diff",
+    "files_reviewed": [],
+    "reviewers": [
+      "engines@0.1.0"
+    ]
+  },
+  "coverage": {
+    "files_reviewed": [
+      "/Users/younas.janas/Downloads/Project/blog/.gitignore",
+      "/Users/younas.janas/Downloads/Project/blog/content/about.md",
+      "/Users/younas.janas/Downloads/Project/blog/hugo.toml",
+      "/Users/younas.janas/Downloads/Project/blog/layouts/sitemap.xml",
+      "/Users/younas.janas/Downloads/Project/blog/static/anatomy/index.html",
+      "/Users/younas.janas/Downloads/Project/blog/static/lab/format-string/index.html",
+      "/Users/younas.janas/Downloads/Project/blog/static/lab/index.html",
+      "/Users/younas.janas/Downloads/Project/blog/static/lab/stack-smash/index.html",
+      "/Users/younas.janas/Downloads/Project/blog/static/lab/tcache/index.html",
+      "/Users/younas.janas/Downloads/Project/blog/static/safari-pinned-tab.svg",
+      "/Users/younas.janas/Downloads/Project/blog/verify-build.py"
+    ],
+    "enumeration": [],
+    "passes": 1
+  },
+  "result": "pass",
+  "counts": {
+    "critical": 0,
+    "high": 0,
+    "medium": 0,
+    "low": 0,
+    "needs_verification": 0
+  },
+  "findings": [],
+  "waivers_applied": [],
+  "gate": {
+    "blocking": [],
+    "evaluated_at": "2026-11-01T12:35:26.868Z",
+    "policy": {
+      "blocking_severities": [
+        "critical",
+        "high"
+      ],
+      "min_confidence": "medium",
+      "stop_block_severities": [
+        "critical"
+      ]
+    }
+  }
+}

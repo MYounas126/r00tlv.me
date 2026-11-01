@@ -1,0 +1,859 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Poison a tcache bin | r00tlv</title>
+<meta name="description" content="An interactive glibc tcache poisoning lab for 2.32 and newer. Free two chunks, watch the safe-linked fd pointers form, then mangle one yourself and see the second malloc hand back an address you chose.">
+<link rel="canonical" href="https://r00tlv.me/lab/tcache/">
+<meta name="robots" content="index, follow">
+<meta property="og:title" content="Poison a tcache bin">
+<meta property="og:description" content="Free two chunks, watch the safe-linked fd pointers form, then mangle one yourself and see the second malloc hand back an address you chose.">
+<meta property="og:url" content="https://r00tlv.me/lab/tcache/">
+<meta property="og:type" content="article">
+<link rel="icon" href="/favicon.ico">
+<style>
+:root{
+  --bg:#12161f; --panel:#1a2030; --sunk:#161b28; --stroke:#2c3648; --edge:#626e84;
+  --txt:#e6edf3; --sub:#8b98ad; --dim:#808b9e;
+  --cyan:#56d4dd; --green:#62d38a; --amber:#f2b544; --red:#ed8796; --purple:#c678dd;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--txt);font-family:var(--mono);
+  font-size:15px;line-height:1.6;-webkit-font-smoothing:antialiased}
+.wrap{max-width:860px;margin:0 auto;padding-inline:20px;padding-block:34px 70px}
+a{color:var(--cyan);text-decoration:none}
+a:hover{text-decoration:underline}
+.back{font-size:13px;color:var(--sub)}
+h1{font-size:clamp(23px,4.4vw,31px);font-weight:700;margin:18px 0 8px;line-height:1.2}
+.lede{color:var(--sub);font-size:14.5px;margin:0 0 26px;max-width:66ch}
+h2{font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--cyan);margin:30px 0 12px}
+code{color:var(--txt)}
+
+.controls{display:flex;flex-direction:column;gap:12px;margin-bottom:22px}
+.inrow{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+label.lbl{font-size:12px;color:var(--sub);letter-spacing:.06em;text-transform:uppercase}
+input[type=text]{flex:1 1 260px;min-width:0;background:var(--sunk);border:1px solid var(--edge);
+  color:var(--txt);font-family:var(--mono);font-size:14px;padding:10px 12px;border-radius:6px}
+input[type=text]:focus{outline:2px solid var(--cyan);outline-offset:1px;border-color:var(--cyan)}
+.presets{display:flex;gap:7px;flex-wrap:wrap}
+button{background:var(--panel);border:1px solid var(--edge);color:var(--sub);
+  font-family:var(--mono);font-size:12.5px;padding:6px 11px;border-radius:5px;cursor:pointer}
+button:hover:not([disabled]){color:var(--txt);border-color:var(--sub)}
+button:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
+button[disabled]{opacity:.38;cursor:not-allowed}
+button.go{color:var(--txt);border-color:var(--sub)}
+button.hot{color:var(--amber);border-color:var(--amber)}
+.toggle{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--sub);cursor:pointer}
+.toggle input{accent-color:var(--cyan);width:15px;height:15px;cursor:pointer}
+.toggle input:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
+.mangle{font-size:12.5px;color:var(--sub);word-break:break-all}
+.mangle b{color:var(--amber);font-weight:700}
+
+.box{border:1px solid var(--stroke);border-radius:10px;overflow:hidden;background:var(--panel)}
+.row{display:grid;grid-template-columns:118px 1fr;border-bottom:1px solid var(--stroke)}
+.row:last-child{border-bottom:0}
+.rlab{background:var(--sunk);padding:11px 10px;font-size:11.5px;color:var(--sub);
+  border-right:1px solid var(--stroke);display:flex;flex-direction:column;gap:2px;justify-content:center}
+.rlab .nm{color:var(--txt);font-size:12px;font-weight:700}
+.rbody{padding:9px 11px;display:flex;flex-direction:column;gap:3px;min-width:0}
+.fld{display:grid;grid-template-columns:40px 1fr;gap:8px;font-size:12.5px;align-items:baseline}
+.fld .k{color:var(--dim)}
+.fld .v{color:var(--txt);word-break:break-all}
+.fld .after{color:var(--sub);display:block;font-size:12px}
+.tag{font-size:11px;padding:1px 6px;border-radius:4px;border:1px solid var(--stroke);
+  color:var(--sub);align-self:flex-start}
+.t-head{color:var(--bg);background:var(--cyan);border-color:var(--cyan);font-weight:700}
+.t-use{color:var(--green);border-color:var(--green)}
+.t-bin{color:var(--cyan);border-color:var(--cyan)}
+.t-orph{color:var(--dim);border-color:var(--dim)}
+.t-bad{color:var(--red);border-color:var(--red)}
+.t-struct{color:var(--purple);border-color:var(--purple)}
+.v-mangled{color:var(--amber)}
+.v-key{color:var(--purple)}
+.v-null{color:var(--dim)}
+.v-target{color:var(--red)}
+.arrow{color:var(--dim);padding:0 2px}
+
+.predict{margin-top:10px;font-size:12.5px;color:var(--sub);border-left:2px solid var(--stroke);
+  padding-left:11px;line-height:1.55}
+.predict b{color:var(--txt);font-weight:700}
+.zone{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--sub);margin-top:10px}
+.zone span{display:flex;align-items:center;gap:6px}
+.sw{width:11px;height:11px;border-radius:3px;display:inline-block}
+
+.verdict{margin-top:18px;border:1px solid var(--stroke);border-left-width:4px;border-radius:8px;
+  padding:15px 17px;background:var(--sunk);display:flex;flex-direction:column;gap:7px}
+.verdict .vt{font-size:13px;font-weight:700;letter-spacing:.04em;word-break:break-word}
+.verdict .vd{font-size:13.5px;color:var(--sub);line-height:1.55}
+.v-ok{border-left-color:var(--green)} .v-ok .vt{color:var(--green)}
+.v-warn{border-left-color:var(--amber)} .v-warn .vt{color:var(--amber)}
+.v-bad{border-left-color:var(--red)} .v-bad .vt{color:var(--red)}
+.v-info{border-left-color:var(--cyan)} .v-info .vt{color:var(--cyan)}
+.v-win{border-left-color:var(--purple)} .v-win .vt{color:var(--purple)}
+
+.log{margin-top:12px;font-size:12.5px;color:var(--sub);display:flex;flex-direction:column;gap:2px}
+.log .ln{word-break:break-all}
+.log .ln b{color:var(--txt);font-weight:700}
+
+pre.src{background:var(--sunk);border:1px solid var(--stroke);border-radius:8px;
+  padding:14px 16px;overflow-x:auto;font-size:13px;line-height:1.55;margin:0}
+pre.src .kw{color:var(--purple)} pre.src .fn{color:var(--cyan)} pre.src .cm{color:var(--dim)}
+pre.src .st{color:var(--green)}
+.cap{font-size:12px;color:var(--dim);margin:8px 0 0}
+.note{font-size:13.5px;color:var(--sub);line-height:1.6;max-width:66ch}
+.note b{color:var(--txt)}
+
+.vtab{border:1px solid var(--stroke);border-radius:10px;overflow:hidden;background:var(--panel)}
+.vtab .vr{display:grid;grid-template-columns:76px 1fr;border-bottom:1px solid var(--stroke);
+  font-size:13px}
+.vtab .vr:last-child{border-bottom:0}
+.vtab .vv{background:var(--sunk);padding:9px 10px;color:var(--amber);font-weight:700;
+  border-right:1px solid var(--stroke)}
+.vtab .vx{padding:9px 12px;color:var(--sub);line-height:1.5}
+ul.simp{font-size:13.5px;color:var(--sub);line-height:1.6;max-width:70ch;padding-left:20px}
+ul.simp li{margin-bottom:7px}
+
+footer{margin-top:44px;padding-top:18px;border-top:1px solid var(--stroke);
+  font-size:12.5px;color:var(--dim)}
+@media (max-width:620px){
+  body{font-size:14.5px}
+  .row{grid-template-columns:92px 1fr}
+  .rlab{font-size:10.5px;padding:9px 7px}
+  .fld{grid-template-columns:34px 1fr;gap:6px;font-size:12px}
+  .vtab .vr{grid-template-columns:62px 1fr;font-size:12.5px}
+  pre.src{font-size:12px;padding:12px 12px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none !important;animation:none !important}}
+
+/* Horizontal scroll containers must be keyboard-operable (WCAG 2.1.1).
+   Chrome and Safari only allow arrow-key scrolling when the container
+   is focusable, so each is given tabindex=0 by the script below. */
+[tabindex="0"]:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
+
+/* LINK UNDERLINE: WCAG 1.4.1. A link inside a paragraph must be
+   distinguishable without relying on hue, and our cyan measures under 2:1
+   against the surrounding text. Standalone block links (nav, cards) carry
+   their own position and box, so they stay underline-free. */
+p a, li a, figcaption a, .lic a, .note a, .why a, footer a, .cdesc a{
+  text-decoration:underline; text-underline-offset:2px;
+  text-decoration-thickness:1px; text-decoration-color:color-mix(in srgb,var(--cyan) 55%, transparent);
+}
+p a:hover, li a:hover, footer a:hover{text-decoration-color:var(--cyan)}
+</style>
+</head>
+<body>
+<main class="wrap">
+
+<div class="back"><a href="/">&larr; r00tlv</a> &middot; <a href="/posts/">posts</a></div>
+
+<h1>Poison a tcache bin</h1>
+<p class="lede">Allocate two chunks, free them, and watch the tcache freelist form. Then overwrite a
+freed chunk's <code>fd</code> and see where the next <code>malloc</code> goes. This models glibc
+2.32 and newer, so safe-linking, the tcache key and the alignment check are all in play.</p>
+
+<h2>The program under test</h2>
+<pre class="src"><span class="kw">char</span> *a = <span class="fn">malloc</span>(<span class="st">0x28</span>);   <span class="cm">/* 0x30-byte chunk, tcache index 1 */</span>
+<span class="kw">char</span> *b = <span class="fn">malloc</span>(<span class="st">0x28</span>);
+<span class="fn">free</span>(a);
+<span class="fn">free</span>(b);                  <span class="cm">/* bin head is b, LIFO */</span>
+
+<span class="cm">/* a use-after-free or an overflow gives you 8 bytes of write into b */</span>
+*(<span class="kw">size_t</span> *)b = ((<span class="kw">size_t</span>)b &gt;&gt; <span class="st">12</span>) ^ (<span class="kw">size_t</span>)target;
+
+<span class="fn">malloc</span>(<span class="st">0x28</span>);            <span class="cm">/* hands back b */</span>
+<span class="kw">char</span> *p = <span class="fn">malloc</span>(<span class="st">0x28</span>);  <span class="cm">/* hands back target */</span></pre>
+
+<h2>Allocator controls</h2>
+<div class="controls">
+  <div class="presets">
+    <button type="button" id="btn-malloc" class="go">malloc(0x28) &rarr; A</button>
+    <button type="button" id="btn-freeA">free(A)</button>
+    <button type="button" id="btn-freeB">free(B)</button>
+    <button type="button" id="btn-reset">reset</button>
+  </div>
+  <label class="toggle"><input type="checkbox" id="glibc" checked>
+    glibc 2.34 or newer (random <code>tcache_key</code>)</label>
+</div>
+
+<h2>tcache_perthread_struct</h2>
+<div class="box" id="struct"></div>
+<p class="cap">One struct per thread, itself a heap chunk of 0x290 bytes. Only
+<code>counts[1]</code> and <code>entries[1]</code> matter here. Note that
+<code>entries[]</code> is stored in the clear; only the <code>next</code> fields inside the
+chunks are mangled.</p>
+
+<h2>The bin, as it is right now</h2>
+<div class="box" id="bin" aria-live="polite"></div>
+<div class="predict" id="predict"></div>
+<div class="zone">
+  <span><i class="sw" style="background:var(--cyan)"></i>in the bin</span>
+  <span><i class="sw" style="background:var(--amber)"></i>mangled pointer</span>
+  <span><i class="sw" style="background:var(--purple)"></i>tcache key</span>
+  <span><i class="sw" style="background:var(--red)"></i>your target</span>
+  <span><i class="sw" style="background:var(--dim)"></i>unreachable or empty</span>
+</div>
+
+<div class="verdict v-info" id="verdict" aria-live="polite">
+  <div class="vt" id="vt">Nothing allocated yet</div>
+  <div class="vd" id="vd">Press <code>malloc(0x28)</code> to carve the first chunk.</div>
+</div>
+
+<h2>Corrupt the freed chunk</h2>
+<div class="controls">
+  <div class="inrow">
+    <label class="lbl" for="target">target</label>
+    <input type="text" id="target" spellcheck="false" autocomplete="off"
+           value="0x7fffffffe2c0" placeholder="0x..."
+           aria-label="Address you want malloc to return">
+  </div>
+  <div class="presets">
+    <button type="button" class="tp" data-t="0x7fffffffe2c0">stack slot, aligned</button>
+    <button type="button" class="tp" data-t="0x7fffffffe2c8">saved RIP, 8 mod 16</button>
+    <button type="button" class="tp" data-t="0x555555558018">GOT entry</button>
+    <button type="button" class="tp" data-t="0x555555559010">the tcache struct</button>
+  </div>
+  <div class="mangle" id="mangle"></div>
+  <div class="presets">
+    <button type="button" id="btn-raw">write the raw target into fd</button>
+    <button type="button" id="btn-mangled" class="hot">write the mangled value into fd</button>
+  </div>
+</div>
+
+<h2>Pointers handed back</h2>
+<div class="log" id="log"></div>
+
+<h2>Heap map</h2>
+<div class="box" id="heap"></div>
+
+<h2>What glibc actually does</h2>
+<pre class="src"><span class="cm">/* malloc.c, trimmed */</span>
+#define PROTECT_PTR(pos, ptr) \
+  ((__typeof (ptr)) ((((size_t) pos) &gt;&gt; 12) ^ ((size_t) ptr)))
+#define REVEAL_PTR(ptr)  PROTECT_PTR (&amp;ptr, ptr)
+
+<span class="kw">static</span> <span class="fn">tcache_put</span> (mchunkptr chunk, <span class="kw">size_t</span> tc_idx)
+{
+  tcache_entry *e = <span class="fn">chunk2mem</span> (chunk);
+  e-&gt;key  = tcache_key;                       <span class="cm">/* 2.34+; before that, the tcache pointer */</span>
+  e-&gt;next = <span class="fn">PROTECT_PTR</span> (&amp;e-&gt;next, tcache-&gt;entries[tc_idx]);
+  tcache-&gt;entries[tc_idx] = e;                <span class="cm">/* the head is NOT mangled */</span>
+  ++(tcache-&gt;counts[tc_idx]);
+}
+
+<span class="kw">static</span> <span class="kw">void</span> *<span class="fn">tcache_get</span> (<span class="kw">size_t</span> tc_idx)
+{
+  tcache_entry *e = tcache-&gt;entries[tc_idx];
+  <span class="kw">if</span> (<span class="fn">__glibc_unlikely</span> (!<span class="fn">aligned_OK</span> (e)))        <span class="cm">/* added in 2.32 */</span>
+    <span class="fn">malloc_printerr</span> (<span class="st">"malloc(): unaligned tcache chunk detected"</span>);
+  tcache-&gt;entries[tc_idx] = <span class="fn">REVEAL_PTR</span> (e-&gt;next);
+  --(tcache-&gt;counts[tc_idx]);
+  e-&gt;key = NULL;                              <span class="cm">/* why realloc-then-free is not a double free */</span>
+  <span class="kw">return</span> (<span class="kw">void</span> *) e;                         <span class="cm">/* no size check at all */</span>
+}</pre>
+<p class="cap">The fast path in <code>__libc_malloc</code> only calls <code>tcache_get</code> when
+<code>counts[tc_idx] &gt; 0</code>, which is the whole reason the classic recipe frees two chunks
+rather than one.</p>
+
+<h2>Why the old write-ups no longer work</h2>
+<p class="note">Most tcache poisoning tutorials were written between 2018 and 2020, when a tcache
+bin was a plain singly linked list and the <code>fd</code> field held the next pointer in the
+clear. The move in those tutorials is one line: overwrite the <code>fd</code> of a freed chunk
+with the address you want, call <code>malloc</code> twice, take delivery. On anything built
+against glibc 2.32 or later that line stores a value which is read back through an XOR, so the
+pointer the allocator follows is your target combined with a key you have not accounted for.</p>
+<p class="note">The key is the address of the <code>fd</code> field itself shifted right by
+twelve. Twelve is the page shift, so the key is the virtual page number of the heap page the
+chunk sits on, and every chunk on that page shares it. Recovering it is not hard, but it is now a
+prerequisite. The route this lab shows is the usual one: a chunk freed into an <b>empty</b> bin
+stores <code>(address &gt;&gt; 12) ^ 0</code>, which is the key sitting in memory in plain view.
+Any read primitive that reaches the first eight bytes of a freed chunk gives you the key for that
+page, and from there you can mangle anything you like.</p>
+<p class="note">The second thing those tutorials skip is alignment. Since 2.32,
+<code>tcache_get</code> refuses to return a pointer that is not a multiple of sixteen, which rules
+out the old habit of aiming at a saved return address or at a GOT slot that happens to sit eight
+bytes off alignment. The work-around is to aim at the aligned address below the target and
+reconstruct the eight bytes you overshoot, which is why current write-ups talk about targeting
+<code>target - 8</code>.</p>
+<p class="note">Taken together the two changes do not close the technique, they raise its price.
+A blind <code>fd</code> overwrite that used to be a quiet win now aborts the process on the next
+<code>malloc</code>, and a working exploit needs a heap address leak plus a target you can reach
+from a sixteen byte boundary. That is a reasonable result for a mitigation that costs one shift
+and one XOR.</p>
+
+<h2>Version history</h2>
+<div class="vtab">
+  <div class="vr"><div class="vv">2.26</div><div class="vx">tcache introduced. Seven chunks per
+    bin, 64 bins, and no integrity checking on the list whatsoever.</div></div>
+  <div class="vr"><div class="vv">2.29</div><div class="vx"><code>tcache_entry</code> gains a
+    <code>key</code> field and <code>free</code> starts reporting
+    <code>free(): double free detected in tcache 2</code>.</div></div>
+  <div class="vr"><div class="vv">2.30</div><div class="vx"><code>counts[]</code> widened from
+    <code>char</code> to <code>uint16_t</code>, which is why the perthread struct chunk grew from
+    0x250 to 0x290 bytes.</div></div>
+  <div class="vr"><div class="vv">2.32</div><div class="vx">Safe-linking applied to tcache and
+    fastbin <code>fd</code> pointers, and <code>tcache_get</code> gains the
+    <code>aligned_OK</code> check.</div></div>
+  <div class="vr"><div class="vv">2.34</div><div class="vx"><code>tcache_key</code> becomes a
+    random value from <code>getrandom</code> rather than the address of the perthread struct. The
+    malloc hooks were removed in the same release, which retired
+    <code>__free_hook</code> as a target.</div></div>
+</div>
+
+<h2>Assumptions and simplifications</h2>
+<ul class="simp">
+  <li>The addresses are plausible rather than real. The heap base is fixed at
+    <code>0x555555559000</code>, which is what a PIE binary with ASLR disabled tends to show, and
+    nothing here varies between runs.</li>
+  <li>Memory outside the chunks this model knows about reads back as zero. On a real target it
+    holds whatever was there, which matters because the second <code>malloc</code> reads eight
+    bytes from your target address and writes eight bytes of zero at <code>target + 8</code> when
+    it clears the key.</li>
+  <li>Only one bin is modelled, index 1, for 0x30-byte chunks. A real tcache has 64 bins and a
+    thread has one perthread struct for all of them.</li>
+  <li>The checks <code>free</code> performs before it reaches the tcache path, such as
+    <code>free(): invalid pointer</code> and <code>free(): invalid size</code>, are not
+    modelled.</li>
+  <li>The bin cannot fill up here, so the fall-through from a full tcache into the fastbin and
+    the unsorted bin is out of scope.</li>
+  <li>The double-free scan is modelled with the three checks current glibc performs in that loop,
+    in source order. The release that added each individual check inside the loop is not asserted
+    on this page, only the release that added the loop.</li>
+  <li>The key check is a heuristic in real glibc too. A chunk whose <code>key</code> field happens
+    to match by coincidence triggers the scan, and <code>free</code> carries on normally when the
+    chunk is not found in the bin.</li>
+</ul>
+
+<footer>Part of <a href="https://r00tlv.me">r00tlv.me</a>. Modelled on glibc 2.32 and newer,
+x86-64, main arena, single thread. Free to embed or link.</footer>
+
+</main>
+
+<script>
+(function () {
+  'use strict';
+
+  var HEAP     = 0x555555559000n;  /* first page of the main arena heap */
+  var TC_CHUNK = HEAP;             /* tcache_perthread_struct lives here */
+  var TC_MEM   = HEAP + 0x10n;     /* the value of the tcache pointer */
+  var TC_SIZE  = 0x291n;           /* 0x290 | PREV_INUSE */
+  var FIRST    = HEAP + 0x290n;    /* first chunk after the perthread struct */
+  var CSIZE    = 0x30n;            /* request2size(0x28) */
+  var SZF      = 0x31n;            /* 0x30 | PREV_INUSE */
+  var RANDKEY  = 0x7a3f91c2e5d04b68n;
+  var FILL     = 7;                /* mp_.tcache_count */
+
+  var elMalloc  = document.getElementById('btn-malloc');
+  var elFreeA   = document.getElementById('btn-freeA');
+  var elFreeB   = document.getElementById('btn-freeB');
+  var elReset   = document.getElementById('btn-reset');
+  var elGlibc   = document.getElementById('glibc');
+  var elStruct  = document.getElementById('struct');
+  var elBin     = document.getElementById('bin');
+  var elPredict = document.getElementById('predict');
+  var elV       = document.getElementById('verdict');
+  var elVT      = document.getElementById('vt');
+  var elVD      = document.getElementById('vd');
+  var elTarget  = document.getElementById('target');
+  var elMangle  = document.getElementById('mangle');
+  var elRaw     = document.getElementById('btn-raw');
+  var elMang    = document.getElementById('btn-mangled');
+  var elLog     = document.getElementById('log');
+  var elHeap    = document.getElementById('heap');
+
+  var S = null;
+
+  function hx(v) { return '0x' + v.toString(16); }
+  function h16(v) {
+    var s = v.toString(16);
+    while (s.length < 16) { s = '0' + s; }
+    return '0x' + s;
+  }
+  /* PROTECT_PTR and REVEAL_PTR are the same operation. pos is the address of
+     the fd field itself, which is the mem pointer of the chunk holding it. */
+  function prot(pos, ptr) { return (pos >> 12n) ^ ptr; }
+  function alignedOK(p) { return (p & 0xfn) === 0n; }
+  function keyval() { return elGlibc.checked ? RANDKEY : TC_MEM; }
+
+  function reset() {
+    S = { chunks: [], top: FIRST, head: 0n, count: 0, served: 0,
+          fault: null, poison: null, log: [] };
+    say('info', 'Nothing allocated yet',
+      'The heap holds only the top chunk. Press <code>malloc(0x28)</code> to carve chunk A. ' +
+      'The first malloc in a thread also allocates the <code>tcache_perthread_struct</code>, ' +
+      'which is why the first ordinary chunk starts 0x290 bytes into the heap.');
+  }
+
+  function say(cls, title, detail) {
+    S.msg = { cls: cls, title: title, detail: detail };
+  }
+  function fault(msg, detail) {
+    S.fault = msg;
+    say('bad', msg, detail + ' <code>malloc_printerr</code> prints the message to stderr and ' +
+        'calls <code>abort</code>, so the process takes <code>SIGABRT</code> here rather than ' +
+        'carrying on with a corrupt bin.');
+  }
+  function nextName() { return String.fromCharCode(65 + (S.served % 26)); }
+  function chunkAt(mem) {
+    for (var i = 0; i < S.chunks.length; i++) {
+      if (S.chunks[i].mem === mem) { return S.chunks[i]; }
+    }
+    return null;
+  }
+  function byName(n) {
+    for (var i = 0; i < S.chunks.length; i++) {
+      if (S.chunks[i].name === n) { return S.chunks[i]; }
+    }
+    return null;
+  }
+  /* memory this model does not track reads back as zero */
+  function readFd(mem) {
+    var c = chunkAt(mem);
+    return c ? c.fd : 0n;
+  }
+
+  function doMalloc() {
+    if (S.fault) { return; }
+    var name = nextName(), c, e, stored, next;
+
+    if (S.count > 0) {
+      /* __libc_malloc fast path: counts[idx] > 0, so tcache_get runs */
+      e = S.head;
+      if (!alignedOK(e)) {
+        fault('malloc(): unaligned tcache chunk detected',
+          '<code>entries[1]</code> held <code>' + hx(e) + '</code>, which is not a multiple of ' +
+          'sixteen. <code>tcache_get</code> checks <code>aligned_OK</code> on the head before ' +
+          'it dereferences anything, so the allocator never reads from that address.');
+        render(); return;
+      }
+      stored = readFd(e);
+      next = prot(e, stored);
+      c = chunkAt(e);
+      S.head = next;
+      S.count -= 1;
+      if (c) { c.key = 0n; c.state = 'used'; c.alias = name; }
+      S.served += 1;
+      S.log.push({ name: name, addr: e, via: c ? 'tcache, was ' + c.name : 'tcache, poisoned' });
+
+      if (!c) {
+        say('win', name + ' = malloc(0x28) returned ' + hx(e),
+          'That address was never a chunk. <code>tcache_get</code> took it straight out of ' +
+          '<code>entries[1]</code> and returned it, with no size check and no arena check. On ' +
+          'the way out it read eight bytes from <code>' + hx(e) + '</code> to refill the head, ' +
+          'which is now <code>' + hx(next) + '</code>, and wrote eight bytes of zero at ' +
+          '<code>' + hx(e + 8n) + '</code> when it cleared the key. Both of those are real ' +
+          'side effects you have to plan around on a live target.');
+      } else {
+        say('ok', name + ' = malloc(0x28) returned ' + hx(e) + ', which is ' + c.name,
+          'The head came off the bin, <code>counts[1]</code> dropped to <code>' + S.count +
+          '</code> and <code>entries[1]</code> was refilled with <code>REVEAL_PTR(' + c.name +
+          '->next)</code>, which unmangles to <code>' + hx(next) + '</code>. The key field was ' +
+          'cleared on the way out, so freeing ' + c.name + ' again will not be caught.');
+      }
+      render(); return;
+    }
+
+    /* bin empty: split the top chunk */
+    c = { name: name, chunk: S.top, mem: S.top + 0x10n, size: SZF,
+          fd: 0n, key: 0n, state: 'used', alias: null };
+    S.top += CSIZE;
+    S.chunks.push(c);
+    S.served += 1;
+    S.log.push({ name: name, addr: c.mem, via: 'split from the top chunk' });
+    var d = '<code>counts[1]</code> is zero, so the tcache fast path was skipped and the ' +
+      'allocator split 0x30 bytes off the top chunk. The chunk header sits at <code>' +
+      hx(c.chunk) + '</code> with a size field of <code>0x31</code>, which is 0x30 with the ' +
+      'PREV_INUSE bit set. The pointer you get back is the header address plus sixteen.';
+    if (S.poison && S.head !== 0n) {
+      d += ' Your poisoned pointer is stranded: <code>entries[1]</code> still holds <code>' +
+           hx(S.head) + '</code>, but the count reached zero first and malloc never looks at ' +
+           'the head while the count is zero. This is why the recipe frees two chunks rather ' +
+           'than one.';
+    }
+    say(S.poison ? 'warn' : 'ok', name + ' = malloc(0x28) returned ' + hx(c.mem), d);
+    render();
+  }
+
+  function doFree(nm) {
+    if (S.fault) { return; }
+    var c = byName(nm);
+    if (!c) { return; }
+    var k = keyval(), cnt = 0, tmp = S.head, t;
+
+    /* _int_free checks the key before it checks the count */
+    if (c.key === k) {
+      while (tmp !== 0n) {
+        if (cnt >= FILL) {
+          fault('free(): too many chunks detected in tcache',
+            'The key field of ' + nm + ' matched, so free walked the bin looking for it. The ' +
+            'walk ran past ' + FILL + ' entries without ending, which means the list is ' +
+            'looped or corrupt.');
+          render(); return;
+        }
+        if (!alignedOK(tmp)) {
+          fault('free(): unaligned chunk detected in tcache 2',
+            'The key field of ' + nm + ' matched, so free walked the bin looking for it. The ' +
+            'walk reached <code>' + hx(tmp) + '</code>, which is not sixteen byte aligned, so ' +
+            'the list has been tampered with. Your poisoned pointer is what the walk tripped ' +
+            'over.');
+          render(); return;
+        }
+        if (tmp === c.mem) {
+          fault('free(): double free detected in tcache 2',
+            nm + ' still carries <code>tcache_key</code> in its second word, which told free to ' +
+            'suspect a double free. Free then walked the bin to rule out a coincidence, found ' +
+            nm + ' at <code>' + hx(c.mem) + '</code> and aborted. This check is what retired ' +
+            'the straightforward tcache double free in 2.29.');
+          render(); return;
+        }
+        t = readFd(tmp);
+        tmp = prot(tmp, t);
+        cnt += 1;
+      }
+      /* fell out of the loop without a match: glibc treats it as a coincidence */
+    }
+
+    if (S.count >= FILL) {
+      say('warn', 'free(' + nm + ') did not go into the tcache',
+        '<code>counts[1]</code> is already ' + FILL + ', so <code>tcache_put</code> is skipped ' +
+        'and the chunk takes the fastbin or unsorted bin path instead. That path is outside ' +
+        'this model.');
+      render(); return;
+    }
+
+    var wasEmpty = (S.count === 0);
+    var prev = S.head;
+    c.key = k;
+    c.fd = prot(c.mem, prev);
+    c.state = 'bin';
+    c.alias = null;
+    S.head = c.mem;
+    S.count += 1;
+
+    if (wasEmpty) {
+      say('info', 'free(' + nm + ') pushed the first chunk into the bin',
+        'The bin was empty, so <code>entries[1]</code> was NULL and the mangled next pointer is ' +
+        '<code>(' + hx(c.mem) + ' &gt;&gt; 12) ^ 0</code>, which is <code>' + hx(c.fd) +
+        '</code>. That is the mangling key lying in memory in plain view. Any read of a freed ' +
+        'chunk in an empty bin hands you the heap page number, and the key is the one thing ' +
+        'safe-linking assumes you do not have.');
+    } else {
+      say('info', 'free(' + nm + ') pushed onto the head of the bin',
+        'The bin is LIFO, so ' + nm + ' is now the head and its next pointer is the old head, ' +
+        'mangled against its own address: <code>(' + hx(c.mem) + ' &gt;&gt; 12) ^ ' + hx(prev) +
+        '</code> gives <code>' + hx(c.fd) + '</code>. The next <code>malloc(0x28)</code> will ' +
+        'hand ' + nm + ' straight back.');
+    }
+    render();
+  }
+
+  function parseTarget() {
+    var s = elTarget.value.trim().replace(/^0[xX]/, '').replace(/_/g, '');
+    if (!/^[0-9a-fA-F]{1,16}$/.test(s)) { return null; }
+    return BigInt('0x' + s);
+  }
+
+  function doWrite(mode) {
+    if (S.fault) { return; }
+    var t = parseTarget();
+    if (t === null) { 
+      say('warn', 'That is not a hex address',
+        'Type up to sixteen hex digits, with or without the <code>0x</code> prefix.');
+      render(); return;
+    }
+    if (S.count === 0) {
+      say('warn', 'There is nothing in the bin to corrupt',
+        'You need a freed chunk before there is an <code>fd</code> field worth overwriting. ' +
+        'Free A and then B, then come back.');
+      render(); return;
+    }
+    var c = chunkAt(S.head);
+    if (!c) {
+      say('warn', 'The head of the bin is not a chunk this model tracks',
+        'Press reset and start again.');
+      render(); return;
+    }
+    c.fd = (mode === 'mangled') ? prot(c.mem, t) : t;
+    S.poison = { mode: mode, target: t, chunk: c.name };
+
+    if (mode === 'mangled') {
+      say('warn', 'Wrote the mangled pointer into ' + c.name + '->fd',
+        '<code>' + h16(c.fd) + '</code> is <code>(' + hx(c.mem) + ' &gt;&gt; 12) ^ ' + hx(t) +
+        '</code>. When <code>tcache_get</code> reveals it through the same XOR it comes back ' +
+        'as <code>' + hx(t) + '</code>. Press <code>malloc(0x28)</code> twice: the first call ' +
+        'returns ' + c.name + ' and moves your target into <code>entries[1]</code>, the second ' +
+        'returns the target itself.');
+    } else {
+      var rev = prot(c.mem, t);
+      say('warn', 'Wrote the raw target into ' + c.name + '->fd',
+        'This is the move every pre-2.32 tutorial makes. The allocator does not read the field ' +
+        'back as <code>' + hx(t) + '</code>, it reads it back as <code>REVEAL_PTR</code> of ' +
+        'what you wrote, which is <code>(' + hx(c.mem) + ' &gt;&gt; 12) ^ ' + hx(t) +
+        '</code>, or <code>' + hx(rev) + '</code>. ' +
+        (alignedOK(rev)
+          ? 'That value happens to be sixteen byte aligned, so the alignment check will let it ' +
+            'through and the second malloc will return a wild pointer into unmapped memory.'
+          : 'That value is not sixteen byte aligned, so the second <code>malloc(0x28)</code> ' +
+            'will abort on the <code>aligned_OK</code> check rather than returning anything.'));
+    }
+    render();
+  }
+
+  /* ---------- rendering ---------- */
+
+  function fld(k, v, cls, after) {
+    return '<div class="fld"><span class="k">' + k + '</span><span class="v">' +
+           (cls ? '<span class="' + cls + '">' + v + '</span>' : v) +
+           (after ? '<span class="after">' + after + '</span>' : '') + '</span></div>';
+  }
+  function rowHtml(nm, sub, tags, body) {
+    return '<div class="row"><div class="rlab"><span class="nm">' + nm + '</span><span>' +
+           sub + '</span></div><div class="rbody">' + tags + body + '</div></div>';
+  }
+
+  function renderStruct() {
+    var k = keyval();
+    var h = rowHtml('counts[1]', 'bin for 0x30', '',
+      fld('=', String(S.count), S.count ? '' : 'v-null',
+          'chunks in the bin, out of a maximum of 7. malloc only takes the tcache fast path ' +
+          'while this is greater than zero.'));
+    h += rowHtml('entries[1]', 'bin head', '',
+      fld('=', S.head === 0n ? h16(0n) + ' (NULL)' : h16(S.head),
+          S.head === 0n ? 'v-null' : '',
+          'Stored unmangled. An attacker who can write here directly skips safe-linking ' +
+          'altogether.'));
+    h += rowHtml('tcache_key', elGlibc.checked ? 'getrandom' : '= tcache', '',
+      fld('=', h16(k), 'v-key',
+          elGlibc.checked
+            ? 'A random value generated once per process at tcache init. Leaking it tells you ' +
+              'nothing about the heap layout.'
+            : 'On 2.32 and 2.33 the key is the address of the perthread struct, so a chunk in ' +
+              'the bin leaks a heap pointer in full, not just the page number.'));
+    elStruct.innerHTML = h;
+  }
+
+  function renderBin() {
+    if (S.count === 0 && S.head === 0n) {
+      elBin.innerHTML = rowHtml('empty', 'entries[1]', '<span class="tag t-orph">NULL</span>',
+        '<div class="fld"><span class="k"></span><span class="v after">' +
+        'Nothing has been freed into this bin yet. Allocate a chunk and free it to see the ' +
+        'first mangled pointer appear.</span></div>');
+      return;
+    }
+    var h = '', tmp = S.head, i = 0, c, next, pos = 0, seen = [];
+    while (tmp !== 0n && i < 8) {
+      c = chunkAt(tmp);
+      if (!alignedOK(tmp)) {
+        h += rowHtml(hx(tmp), 'not aligned', '<span class="tag t-bad">aligned_OK fails</span>',
+          '<div class="fld"><span class="k"></span><span class="v after">' +
+          'The next malloc from this bin aborts here with ' +
+          '<code>malloc(): unaligned tcache chunk detected</code> before it reads anything.' +
+          '</span></div>');
+        break;
+      }
+      if (!c) {
+        h += rowHtml(hx(tmp), 'off the heap', '<span class="tag t-bad">not a chunk</span>',
+          '<div class="fld"><span class="k"></span><span class="v after">' +
+          'This address is whatever you pointed the bin at. The allocator will return it ' +
+          'without checking a size field, an arena or a heap boundary. In this model its ' +
+          'first eight bytes read back as zero.</span></div>');
+        break;
+      }
+      next = prot(tmp, c.fd);
+      var tags = '<span class="tag ' + (pos === 0 ? 't-head' : 't-bin') + '">' +
+                 (pos === 0 ? 'head of bin' : 'position ' + pos) + '</span>';
+      var body =
+        fld('chunk', hx(c.chunk), '', 'size field ' + h16(c.size) +
+            ', so 0x30 bytes with PREV_INUSE set') +
+        fld('mem', hx(c.mem), '', 'what malloc returns, and the address the fd field lives at') +
+        fld('fd', h16(c.fd), 'v-mangled',
+            'REVEAL_PTR gives (' + hx(c.mem) + ' &gt;&gt; 12) ^ ' + hx(c.fd) + ' = ' +
+            '<span class="' + (chunkAt(next) ? '' : 'v-target') + '">' +
+            (next === 0n ? hx(next) + ' (NULL, end of the list)'
+                         : hx(next) + (chunkAt(next) ? ' (' + chunkAt(next).name + ')'
+                                                     : ' (not a chunk)')) + '</span>') +
+        fld('key', h16(c.key), c.key === 0n ? 'v-null' : 'v-key',
+            c.key === 0n ? 'cleared, so free will not suspect a double free'
+                         : 'matches tcache_key, so free will check this chunk against the bin');
+      h += rowHtml(c.name, 'in the bin', tags, body);
+      seen.push(c.name);
+      tmp = next; i += 1; pos += 1;
+    }
+    /* chunks that are still marked free but are no longer reachable from the head */
+    for (var j = 0; j < S.chunks.length; j++) {
+      var o = S.chunks[j];
+      if (o.state !== 'bin') { continue; }
+      if (seen.indexOf(o.name) !== -1) { continue; }
+      h += rowHtml(o.name, 'unreachable', '<span class="tag t-orph">orphaned</span>',
+        fld('mem', hx(o.mem), '', '') +
+        fld('key', h16(o.key), 'v-key',
+            'Still in the bin as far as the key check is concerned, but nothing points at it ' +
+            'any more. Poisoning the list threw this chunk away.'));
+    }
+    elBin.innerHTML = h;
+  }
+
+  function renderPredict() {
+    var s;
+    if (S.fault) {
+      s = 'The process has aborted. Press <b>reset</b> to start again.';
+    } else if (S.count > 0) {
+      var e = S.head;
+      if (!alignedOK(e)) {
+        s = 'Next <b>malloc(0x28)</b>: <code>entries[1]</code> holds <code>' + hx(e) +
+            '</code>, which is not a multiple of sixteen, so <code>tcache_get</code> aborts ' +
+            'with <code>malloc(): unaligned tcache chunk detected</code>.';
+      } else {
+        var c = chunkAt(e), nx = prot(e, readFd(e));
+        s = 'Next <b>malloc(0x28)</b>: returns <code>' + hx(e) + '</code>' +
+            (c ? ' (chunk ' + c.name + ')' : ' (not a chunk, this is your target)') +
+            ', sets <code>counts[1]</code> to <code>' + (S.count - 1) +
+            '</code> and <code>entries[1]</code> to <code>' + hx(nx) + '</code>.';
+      }
+    } else {
+      s = 'Next <b>malloc(0x28)</b>: <code>counts[1]</code> is zero, so the tcache fast path is ' +
+          'skipped and the allocator splits the top chunk at <code>' + hx(S.top) +
+          '</code>. A poisoned <code>entries[1]</code> is no use once the count reaches zero, ' +
+          'which is why the recipe frees two chunks.';
+    }
+    elPredict.innerHTML = s;
+  }
+
+  function renderHeap() {
+    var h = rowHtml('tcache', hx(TC_CHUNK), '<span class="tag t-struct">perthread struct</span>',
+      fld('size', h16(TC_SIZE), '',
+          '0x280 bytes of struct, being 64 counts of two bytes each followed by 64 entry '
+          + 'pointers of eight bytes each, which sits inside a 0x290 chunk once the '
+          + 'chunk header is counted. Allocated on the first malloc in the thread.'));
+    for (var i = 0; i < S.chunks.length; i++) {
+      var c = S.chunks[i];
+      var tag = c.state === 'bin'
+        ? '<span class="tag t-bin">freed</span>'
+        : '<span class="tag t-use">in use' + (c.alias && c.alias !== c.name
+            ? ', handed out again as ' + c.alias : '') + '</span>';
+      h += rowHtml(c.name, hx(c.chunk), tag,
+        fld('mem', hx(c.mem), '', '') +
+        fld('size', h16(c.size), '', '') +
+        fld('fd', h16(c.fd), c.state === 'bin' ? 'v-mangled' : '',
+            c.state === 'bin' ? '' :
+            (c.fd === 0n ? 'never written' :
+             'left over from the time this chunk spent in the bin. tcache_get clears the key ' +
+             'field but not the next field, so whatever sat in the first eight bytes survives ' +
+             'into the allocation. A chunk that was linked normally therefore hands the caller ' +
+             'a mangled heap pointer it never asked for.')));
+    }
+    h += rowHtml('top', hx(S.top), '<span class="tag t-orph">wilderness</span>',
+      fld('', 'the rest of the heap', '', 'Every malloc that misses the bins is split off ' +
+          'from here.'));
+    elHeap.innerHTML = h;
+  }
+
+  function renderLog() {
+    if (!S.log.length) {
+      elLog.innerHTML = '<div class="ln">Nothing has been returned yet.</div>';
+      return;
+    }
+    var h = '', n = S.log.length, start = n > 7 ? n - 7 : 0;
+    if (start > 0) { h += '<div class="ln">... ' + start + ' earlier</div>'; }
+    for (var i = start; i < n; i++) {
+      h += '<div class="ln"><b>' + S.log[i].name + '</b> = malloc(0x28) &rarr; <b>' +
+           hx(S.log[i].addr) + '</b> <span style="color:var(--dim)">(' + S.log[i].via +
+           ')</span></div>';
+    }
+    elLog.innerHTML = h;
+  }
+
+  function renderMangle() {
+    var t = parseTarget();
+    if (t === null) {
+      elMangle.innerHTML = 'Enter up to sixteen hex digits.';
+      return;
+    }
+    var al = alignedOK(t)
+      ? '<span style="color:var(--green)">16-byte aligned, so aligned_OK passes</span>'
+      : '<span style="color:var(--red)">' + (t & 0xfn).toString(16) +
+        ' mod 16, so malloc aborts with malloc(): unaligned tcache chunk detected. ' +
+        'Aim at ' + hx(t - (t & 0xfn)) + ' instead and work with the offset</span>';
+    var pos = S.count > 0 ? S.head : null;
+    var line = 'Target <b>' + hx(t) + '</b> is ' + al + '.';
+    if (pos !== null && chunkAt(pos)) {
+      line += '<br>PROTECT_PTR(&amp;' + chunkAt(pos).name + '-&gt;next, ' + hx(t) + ') = (' +
+              hx(pos) + ' &gt;&gt; 12) ^ ' + hx(t) + ' = <b>' + h16(prot(pos, t)) + '</b>';
+    } else if (pos !== null) {
+      line += '<br>The head of the bin is ' + hx(pos) + ', which is not a chunk this model ' +
+              'tracks, so there is no fd field here to mangle against.';
+    } else {
+      line += '<br>Free a chunk first and the mangled value for the head of the bin appears here.';
+    }
+    elMangle.innerHTML = line;
+  }
+
+  function renderButtons() {
+    var a = byName('A'), b = byName('B');
+    elMalloc.disabled = !!S.fault;
+    elMalloc.textContent = 'malloc(0x28) → ' + nextName();
+    elFreeA.disabled = !!S.fault || !a;
+    elFreeB.disabled = !!S.fault || !b;
+    elRaw.disabled = !!S.fault;
+    elMang.disabled = !!S.fault;
+  }
+
+  function renderMsg() {
+    elV.className = 'verdict v-' + S.msg.cls;
+    elVT.textContent = S.msg.title;
+    elVD.innerHTML = S.msg.detail;
+  }
+
+  function render() {
+    renderStruct(); renderBin(); renderPredict(); renderHeap();
+    renderLog(); renderMangle(); renderButtons(); renderMsg();
+  }
+
+  elMalloc.addEventListener('click', doMalloc);
+  elFreeA.addEventListener('click', function () { doFree('A'); });
+  elFreeB.addEventListener('click', function () { doFree('B'); });
+  elReset.addEventListener('click', function () { reset(); render(); });
+  elRaw.addEventListener('click', function () { doWrite('raw'); });
+  elMang.addEventListener('click', function () { doWrite('mangled'); });
+  elTarget.addEventListener('input', renderMangle);
+  elGlibc.addEventListener('change', function () {
+    reset();
+    say('info', 'Reset for ' + (elGlibc.checked ? 'glibc 2.34 or newer' : 'glibc 2.32 or 2.33'),
+      elGlibc.checked
+        ? 'The tcache key is now a random value from <code>getrandom</code>, taken once per ' +
+          'process. Changing the key invalidates every chunk already in the bin, so the lab ' +
+          'starts again.'
+        : 'The tcache key is now the address of the perthread struct, <code>' + hx(TC_MEM) +
+          '</code>. A freed chunk therefore carries a full heap pointer in its second word, ' +
+          'which is a leak in its own right.');
+    render();
+  });
+  Array.prototype.forEach.call(document.querySelectorAll('.tp'), function (btn) {
+    btn.addEventListener('click', function () {
+      elTarget.value = btn.getAttribute('data-t');
+      renderMangle();
+      elTarget.focus();
+    });
+  });
+
+  reset();
+  render();
+})();
+</script>
+<script>
+(function () {
+  var sel = ".tablewrap, pre.src, pre, .cline, .sbytes, .tbl-scroll, table";
+  Array.prototype.forEach.call(document.querySelectorAll(sel), function (el) {
+    if (el.scrollWidth > el.clientWidth + 2 && !el.hasAttribute("tabindex")) {
+      el.setAttribute("tabindex", "0");
+      el.setAttribute("role", "region");
+      if (!el.hasAttribute("aria-label")) el.setAttribute("aria-label", "Scrollable content");
+      el.classList.add("js-scrollable");
+    }
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,206 @@
+{
+  "schema_version": "1.0",
+  "generated_at": "2026-11-01T12:32:21.681Z",
+  "git_head": "245834acd7b1e9d538631a38921d397af4d74fcf",
+  "worktree_digest": "7018ebdc7a9730de5a117e88466159df33f76ed18466a13a2cd512009d389e5e",
+  "base_ref": "main",
+  "scope": {
+    "mode": "diff",
+    "files_reviewed": [
+      "static/lab/stack-smash/index.html",
+      "static/anatomy/index.html",
+      "verify-build.py"
+    ],
+    "reviewers": [
+      "vsec-code-reviewer@0.1.0",
+      "engines@0.1.0"
+    ]
+  },
+  "coverage": {
+    "files_reviewed": [
+      "/Users/younas.janas/Downloads/Project/blog/hugo.toml",
+      "/Users/younas.janas/Downloads/Project/blog/layouts/sitemap.xml",
+      "/Users/younas.janas/Downloads/Project/blog/static/anatomy/index.html",
+      "/Users/younas.janas/Downloads/Project/blog/static/lab/format-string/index.html",
+      "/Users/younas.janas/Downloads/Project/blog/static/lab/index.html",
+      "/Users/younas.janas/Downloads/Project/blog/static/lab/stack-smash/index.html",
+      "/Users/younas.janas/Downloads/Project/blog/static/lab/tcache/index.html",
+      "/Users/younas.janas/Downloads/Project/blog/verify-build.py",
+      "/Users/younas.janas/Downloads/Project/blog/static/_headers",
+      "/Users/younas.janas/Downloads/Project/blog/wrangler.jsonc",
+      "/Users/younas.janas/Downloads/Project/blog/content/about.md",
+      "/Users/younas.janas/Downloads/Project/blog/static/safari-pinned-tab.svg"
+    ],
+    "enumeration": [
+      {
+        "kind": "dom-sinks",
+        "surface": "static/lab/stack-smash/index.html",
+        "rows": 2,
+        "complete": true
+      },
+      {
+        "kind": "dom-sinks",
+        "surface": "static/lab/format-string/index.html",
+        "rows": 8,
+        "complete": true
+      },
+      {
+        "kind": "dom-sinks",
+        "surface": "static/lab/tcache/index.html",
+        "rows": 7,
+        "complete": true
+      },
+      {
+        "kind": "dom-sinks",
+        "surface": "static/anatomy/index.html",
+        "rows": 0,
+        "complete": true
+      },
+      {
+        "kind": "dom-sinks",
+        "surface": "static/lab/index.html",
+        "rows": 0,
+        "complete": true
+      },
+      {
+        "kind": "untrusted-inputs",
+        "surface": "all five new static pages",
+        "rows": 3,
+        "complete": true
+      },
+      {
+        "kind": "attribute-context-interpolations",
+        "surface": "three lab pages",
+        "rows": 5,
+        "complete": true
+      },
+      {
+        "kind": "clipboard-path",
+        "surface": "static/anatomy/index.html copy-embed",
+        "rows": 3,
+        "complete": true
+      },
+      {
+        "kind": "template-interpolations",
+        "surface": "layouts/sitemap.xml",
+        "rows": 6,
+        "complete": true
+      },
+      {
+        "kind": "build-script-inputs",
+        "surface": "verify-build.py",
+        "rows": 6,
+        "complete": true
+      },
+      {
+        "kind": "security-headers",
+        "surface": "static/_headers CSP vs new inline script/style",
+        "rows": 9,
+        "complete": true
+      }
+    ],
+    "passes": 2
+  },
+  "result": "pass",
+  "counts": {
+    "critical": 0,
+    "high": 0,
+    "medium": 1,
+    "low": 3,
+    "needs_verification": 0
+  },
+  "findings": [
+    {
+      "vsec": "VSEC-17",
+      "rule": "G20",
+      "class": "C9",
+      "severity": "medium",
+      "confidence": "high",
+      "status": "open",
+      "file": "static/lab/stack-smash/index.html",
+      "line": 275,
+      "end_line": 275,
+      "title": "Visitor input reaches innerHTML unencoded — ASCII column of the stack view (DOM HTML injection)",
+      "evidence": "render() builds the stack dump as a raw HTML string and assigns it with elStack.innerHTML = html (L275). The ASCII column is built at L269 as ascii += pr(val), where pr(b) = (b >= 32 && b < 127) ? String.fromCharCode(b) : '.' (L213) and val = bytes[off] are the UTF-8 bytes of the #payload input (L229-230, bytesOf L202-211). pr() passes '<', '>', '&', '\"' and ''' through verbatim; there is no escaper on this path. Disprove attempt: grepped the whole file for esc/escape/encodeURI/textContent/createTextNode on this path — the file has NO escape helper at all (unlike its two sibling lab pages, which both define and use one); elVT uses textContent (L331) and elVD.innerHTML (L332) is fed only constants plus hx() hex and integers, so the ASCII column is the only tainted sink. Reproduced the exact generated markup by re-running render()'s html builder verbatim in node: input 'AAAAAAAAAAAAAAAAAAAAAAAA<style>a{' yields ...<span class=\"ascii\"><style>a</span>..., i.e. a live <style> element injected into the page; innerHTML-inserted <style> IS applied by the browser and is RAWTEXT, so it swallows the remainder of the widget's markup and the attacker then controls CSS on the page. Script execution attempted and NOT achieved: each ascii run is capped at 8 printable bytes (L257 for i<8) and consecutive runs are separated by literal markup whose first '>' closes any tag opened in the preceding run, which defeats every known innerHTML XSS gadget (<img ...onerror>, <svg onload>, <iframe srcdoc> all exceed 8 chars; <script> is 8 but innerHTML-inserted <script> does not execute). So this is confirmed HTML/CSS injection, not confirmed script execution. Delivery is self-inflicted (type or paste into #payload; no location.hash/search/localStorage/postMessage seeding anywhere in the file) and the origin carries no cookies, auth, tokens or backend, which bounds impact to defacing the widget in the victim's own tab. It is still a missing output encoder on a user-input->innerHTML path, it is inconsistent with the two sibling lab pages that do encode, and the site CSP (script-src 'self' 'unsafe-inline') provides no backstop if a future lab page widens the per-fragment ceiling.",
+      "fix_hint": "Add the same esc() helper the format-string page uses (String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')) and wrap the ASCII column: ascii += (val === null ? ' ' : esc(pr(val))). Better still, stop building the ASCII cell as a string: create the <span class=\"ascii\"> element and set .textContent, which cannot be bypassed. Note esc() does not neutralise quotes, so keep it out of attribute positions.",
+      "config_dependency": null,
+      "runtime_only": false,
+      "source": "agent",
+      "waivable": true,
+      "fingerprint": "dc7a7904a416e2029f0fe95972bcd4871865aed3746a5ba68288090b6c06edd8",
+      "id": "VSR-20261101-001"
+    },
+    {
+      "vsec": "VSEC-14",
+      "rule": "G14",
+      "class": "C8",
+      "severity": "low",
+      "confidence": "medium",
+      "status": "open",
+      "file": "static/lab/stack-smash/index.html",
+      "line": 185,
+      "title": "Change introduces untrusted-input rendering to an origin whose CSP allows 'unsafe-inline' script",
+      "evidence": "static/_headers (NOT part of this change) serves, for /*, Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; ... frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'none'. Deployment is Cloudflare Workers assets-only (wrangler.jsonc has an assets block and no main), so public/_headers is the live policy and no path override exists for /lab/* or /anatomy/*. Checked explicitly: every <script> and <style> added by this change is inline and every one of them is ALLOWED by the current policy, so nothing here is blocked and no loosening of the policy is required for this change to deploy. The security consequence runs the other way: 'unsafe-inline' in script-src means CSP will not block an injected inline event handler, so the escaping in these new pages is the only XSS control. Before this change the site rendered no visitor-controlled text at all; this change adds three pages that do, which is what makes 'unsafe-inline' materially weaker than it was. Also verified the anatomy embed story: the snippet is an <img> tag pointing at r00tlv.me SVGs, so frame-ancestors 'none' does not conflict with it (frame-ancestors only governs framing of our documents, not third-party <img> loads of our assets), and img-src 'self' covers the diagrams on our own page.",
+      "fix_hint": "Out of scope for this change, but queue it: move the lab/anatomy inline <script> blocks to hashed external files under /js/ (already cached immutable) or add per-page 'sha256-...' script-src entries in static/_headers, then drop 'unsafe-inline' from script-src. Keep style-src 'unsafe-inline' only as long as the pages use style=\"\" attributes.",
+      "config_dependency": "Confirm the deployed Cloudflare Workers project actually serves public/_headers (assets-only projects do, but verify on the live r00tlv.me response) and that no Transform Rule or Worker overrides Content-Security-Policy for /lab/* or /anatomy/*.",
+      "runtime_only": false,
+      "source": "agent",
+      "waivable": true,
+      "fingerprint": "c83c52f38b0f6047fcc2ce5cca00c7d8e8778eba722f8dfd885268e16181a761",
+      "id": "VSR-20261101-002"
+    },
+    {
+      "vsec": "VSEC-10",
+      "rule": "G16",
+      "class": "C12",
+      "severity": "low",
+      "confidence": "low",
+      "status": "open",
+      "file": "static/anatomy/index.html",
+      "line": 343,
+      "title": "Empty catch swallows the clipboard fallback failure (deterministic seed, confirmed non-security)",
+      "evidence": "Seeded by det-checks.mjs: try { document.execCommand('copy'); done(); } catch (err) { /* clipboard unavailable */ } at L343. Confirmed the code shape is real and ran the disprove pass on it: the swallowed path guards no security invariant. The copied value is read from the button's own data-embed attribute (b.getAttribute('data-embed'), L329), which is author-authored static markup, not visitor input; it is handed to navigator.clipboard.writeText() as a string (L336) or to t.value on a detached <textarea> (L341), neither of which is an HTML parse context, so there is no injection into the fallback. No sanitiser, authz check or validation is bypassed by the empty catch — the only consequence is that a failed copy silently shows no 'copied' confirmation. Recorded as a Low fail-silent so the det seed is dispositioned rather than dropped; it is not an exploitable defect.",
+      "fix_hint": "Give the user a signal on failure rather than swallowing it, e.g. catch (err) { b.textContent = 'copy failed'; }. No security change required.",
+      "config_dependency": null,
+      "runtime_only": false,
+      "source": "det",
+      "waivable": true,
+      "fingerprint": "a64ca560480002e255c16f75866422a2bf837e8d3ba9fe872693cb34b128f2da",
+      "id": "VSR-20261101-003"
+    },
+    {
+      "vsec": "VSEC-00",
+      "rule": "G21",
+      "class": "C0",
+      "severity": "low",
+      "confidence": "low",
+      "status": "open",
+      "file": "verify-build.py",
+      "line": 232,
+      "title": "Build verifier parses rss.xml with xml.etree.ElementTree (entity-expansion DoS surface in CI)",
+      "evidence": "L232: ET.parse(os.path.join(PUB, 'rss.xml')) uses the stdlib expat-backed parser, which per CPython's own XML-vulnerabilities table is exposed to billion-laughs / quadratic entity expansion (it does NOT retrieve external DTDs and does NOT resolve external entities, so this is a resource-exhaustion surface, not an information-disclosure or code-execution one). Disprove pass on the rest of the file, which is what the brief asked for: there is no subprocess, os.system, popen, eval, exec, pickle, yaml.load or __import__ anywhere in verify-build.py — grepped the whole file — so no repo content can execute code during CI through this script. The 'path traversal' shapes are real but inert: resolves() (L203-209) and the new section 5b (L184-190) take hrefs and <loc> values out of the built HTML and do u.replace(SITE,'').lstrip('/') then os.path.join(PUB, rel), so a '../..' segment escapes PUB — but both call sites only ever call os.path.exists / os.path.isfile and never open, read, write or execute the resolved path, so the worst case is a file-existence oracle inside the CI container against paths the CI job can already read. Noted for completeness: new 5b has a correctness wrinkle rather than a security one — an absolute off-site <loc> would not match SITE, so rel keeps the scheme and the check reports it as 'missing' instead of skipping it. The XML input itself is public/rss.xml, generated by Hugo from this repo's own content, so reaching the parser already requires commit access. Low, hardening only.",
+      "fix_hint": "Swap the import for defusedxml.ElementTree (defusedxml.ElementTree.parse), or keep the stdlib parser and bound it, e.g. refuse to parse if the file contains a '<!DOCTYPE' or '<!ENTITY' declaration. Separately, make 5b skip any <loc> that does not start with SITE rather than treating it as a missing file.",
+      "config_dependency": null,
+      "runtime_only": false,
+      "source": "agent",
+      "waivable": true,
+      "fingerprint": "210dc846ec8c2a3dacbe6ce40f7c669ae907df440b829f3b53e13b08cb631c3f",
+      "id": "VSR-20261101-004"
+    }
+  ],
+  "waivers_applied": [],
+  "gate": {
+    "blocking": [],
+    "evaluated_at": "2026-11-01T12:32:21.681Z",
+    "policy": {
+      "blocking_severities": [
+        "critical",
+        "high"
+      ],
+      "min_confidence": "medium",
+      "stop_block_severities": [
+        "critical"
+      ]
+    }
+  }
+}

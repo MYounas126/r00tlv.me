@@ -1,0 +1,1097 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Walk a format string | r00tlv</title>
+<meta name="description" content="Type a format string and watch printf walk it one conversion specifier at a time, showing which variadic argument each one consumes. A CWE-134 demonstrator modelled on the System V AMD64 calling convention.">
+<link rel="canonical" href="https://r00tlv.me/lab/format-string/">
+<meta name="robots" content="index, follow">
+<meta property="og:title" content="Walk a format string">
+<meta property="og:description" content="Type a format string and watch printf walk it one conversion specifier at a time, showing which variadic argument each one consumes.">
+<meta property="og:url" content="https://r00tlv.me/lab/format-string/">
+<meta property="og:type" content="article">
+<link rel="icon" href="/favicon.ico">
+<style>
+:root{
+  --bg:#12161f; --panel:#1a2030; --sunk:#161b28; --stroke:#2c3648; --edge:#626e84;
+  --txt:#e6edf3; --sub:#8b98ad; --dim:#808b9e;
+  --cyan:#56d4dd; --green:#62d38a; --amber:#f2b544; --red:#ed8796; --purple:#c678dd;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--txt);font-family:var(--mono);
+  font-size:15px;line-height:1.6;-webkit-font-smoothing:antialiased}
+.wrap{max-width:860px;margin:0 auto;padding-inline:20px;padding-block:34px 70px}
+a{color:var(--cyan);text-decoration:none}
+a:hover{text-decoration:underline}
+a:focus-visible{outline:2px solid var(--cyan);outline-offset:2px;border-radius:3px}
+.back{font-size:13px;color:var(--sub)}
+h1{font-size:clamp(23px,4.4vw,31px);font-weight:700;margin:18px 0 8px;line-height:1.2}
+.lede{color:var(--sub);font-size:14.5px;margin:0 0 26px;max-width:66ch}
+h2{font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--cyan);margin:30px 0 12px}
+code{color:var(--txt)}
+
+.controls{display:flex;flex-direction:column;gap:12px;margin-bottom:22px}
+.inrow{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+label.lbl{font-size:12px;color:var(--sub);letter-spacing:.06em;text-transform:uppercase}
+input[type=text]{flex:1 1 300px;min-width:0;background:var(--sunk);border:1px solid var(--edge);
+  color:var(--txt);font-family:var(--mono);font-size:14px;padding:10px 12px;border-radius:6px}
+input[type=text]:focus{outline:2px solid var(--cyan);outline-offset:1px;border-color:var(--cyan)}
+input[type=text]:focus-visible{outline:2px solid var(--cyan);outline-offset:1px}
+.presets{display:flex;gap:7px;flex-wrap:wrap}
+button{background:var(--panel);border:1px solid var(--edge);color:var(--sub);
+  font-family:var(--mono);font-size:12.5px;padding:6px 11px;border-radius:5px;cursor:pointer;
+  transition:color .12s,border-color .12s}
+button:hover{color:var(--txt);border-color:var(--sub)}
+button:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
+.counter{font-size:13px;color:var(--sub);display:flex;gap:7px;flex-wrap:wrap;align-items:baseline}
+.counter b{color:var(--txt);font-weight:700;font-variant-numeric:tabular-nums}
+
+.outpane{background:var(--sunk);border:1px solid var(--stroke);border-radius:8px;
+  padding:14px 16px;font-size:13.5px;line-height:1.7;white-space:pre-wrap;
+  overflow-wrap:anywhere;min-height:62px}
+.o-lit{color:var(--txt)}
+.o-conv{color:var(--cyan)}
+.o-esc{color:var(--dim)}
+.o-unk{color:var(--dim);font-style:italic}
+.o-fault{color:var(--red);font-weight:700}
+.o-empty{color:var(--dim)}
+.o-pos{color:var(--purple)}
+
+.tablewrap{border:1px solid var(--stroke);border-radius:10px;background:var(--panel);overflow-x:auto}
+table.trace{border-collapse:collapse;width:100%;min-width:560px;font-size:12.5px}
+table.trace th{background:var(--sunk);color:var(--sub);text-align:left;font-weight:700;
+  font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;padding:9px 10px;
+  border-bottom:1px solid var(--stroke);white-space:nowrap}
+table.trace td{padding:8px 10px;border-bottom:1px solid var(--stroke);vertical-align:top}
+table.trace tr:last-child td{border-bottom:0}
+table.trace .c-n{color:var(--dim);font-variant-numeric:tabular-nums;width:1%}
+table.trace .c-spec{color:var(--txt);font-weight:700;white-space:nowrap}
+table.trace .c-src{color:var(--sub);white-space:nowrap}
+table.trace .c-val{color:var(--sub);white-space:nowrap}
+table.trace .c-out{color:var(--dim);font-variant-numeric:tabular-nums;width:1%;white-space:nowrap}
+table.trace .src-reg{color:var(--amber)}
+table.trace .src-stk{color:var(--cyan)}
+table.trace .src-none{color:var(--dim)}
+table.trace tr.r-write td{background:rgba(237,135,150,.10);
+  background:color-mix(in srgb,var(--red) 10%,transparent)}
+table.trace tr.r-write .c-spec{color:var(--red)}
+table.trace tr.r-fault td{background:rgba(237,135,150,.10);
+  background:color-mix(in srgb,var(--red) 10%,transparent)}
+table.trace tr.r-fault .c-spec{color:var(--red)}
+table.trace .pr{color:var(--txt)}
+table.trace .pr-bad{color:var(--red);font-weight:700}
+table.trace .pr-dim{color:var(--dim);font-style:italic}
+.emptyrow{padding:14px 12px;color:var(--dim);font-size:13px}
+
+.stack{border:1px solid var(--stroke);border-radius:10px;overflow:hidden;background:var(--panel)}
+.srow{display:grid;grid-template-columns:150px 1fr;border-bottom:1px solid var(--stroke)}
+.srow:last-child{border-bottom:0}
+.saddr{background:var(--sunk);padding:10px;font-size:11px;color:var(--sub);min-width:0;
+  overflow-wrap:anywhere;border-right:1px solid var(--stroke);display:flex;
+  flex-direction:column;gap:2px;justify-content:center}
+.saddr .nm{color:var(--txt);font-size:12.5px;font-weight:700}
+.sval{padding:10px 12px;display:flex;flex-direction:column;gap:3px;min-width:0}
+.hexv{font-size:13px;color:var(--dim);overflow-wrap:anywhere;
+  transition:color .12s,background .12s}
+.sdesc{font-size:11.5px;color:var(--sub);overflow-wrap:anywhere}
+.shit{font-size:11px;color:var(--dim)}
+.s-read .hexv{color:var(--cyan)}
+.s-read .shit{color:var(--cyan)}
+.s-deref .hexv{color:var(--green)}
+.s-deref .shit{color:var(--green)}
+.s-write .hexv{color:var(--red);font-weight:700}
+.s-write .shit{color:var(--red);font-weight:700}
+.s-fault .hexv{color:var(--red)}
+.s-fault .shit{color:var(--red)}
+.sdiv{background:var(--sunk);border-bottom:1px solid var(--stroke);padding:8px 12px;
+  font-size:11.5px;color:var(--amber)}
+.zone{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--sub);margin-top:10px}
+.zone span{display:flex;align-items:center;gap:6px}
+.sw{width:11px;height:11px;border-radius:3px;display:inline-block}
+
+.verdict{margin-top:18px;border:1px solid var(--stroke);border-left-width:4px;border-radius:8px;
+  padding:15px 17px;background:var(--sunk);display:flex;flex-direction:column;gap:7px}
+.verdict .vt{font-size:13px;font-weight:700;letter-spacing:.04em}
+.verdict .vd{font-size:13.5px;color:var(--sub);line-height:1.55}
+.v-ok{border-left-color:var(--green)} .v-ok .vt{color:var(--green)}
+.v-warn{border-left-color:var(--amber)} .v-warn .vt{color:var(--amber)}
+.v-bad{border-left-color:var(--red)} .v-bad .vt{color:var(--red)}
+.v-leak{border-left-color:var(--purple)} .v-leak .vt{color:var(--purple)}
+
+.vs{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.card{border:1px solid var(--stroke);border-left-width:3px;border-radius:10px;
+  background:var(--panel);padding:13px 15px;min-width:0}
+.card.safe{border-left-color:var(--green)}
+.card.unsafe{border-left-color:var(--red)}
+.card h3{margin:0 0 9px;font-size:12px;letter-spacing:.08em;text-transform:uppercase;font-weight:700}
+.card.safe h3{color:var(--green)}
+.card.unsafe h3{color:var(--red)}
+.card .cline{background:var(--sunk);border:1px solid var(--stroke);border-radius:6px;
+  padding:8px 10px;font-size:12.5px;overflow-x:auto;white-space:pre;margin-bottom:9px}
+.card .cout{font-size:13px;white-space:pre-wrap;overflow-wrap:anywhere;min-height:40px;
+  color:var(--txt)}
+.card .cnote{font-size:11.5px;color:var(--sub);margin-top:9px;line-height:1.5}
+
+pre.src{background:var(--sunk);border:1px solid var(--stroke);border-radius:8px;
+  padding:14px 16px;overflow-x:auto;font-size:13px;line-height:1.55;margin:0}
+pre.src .kw{color:var(--purple)} pre.src .fn{color:var(--cyan)} pre.src .cm{color:var(--dim)}
+pre.src .st{color:var(--green)}
+.callout{border:1px solid var(--stroke);border-left:4px solid var(--amber);border-radius:8px;
+  background:var(--sunk);padding:14px 16px;margin-top:16px;font-size:13.5px;color:var(--sub);
+  line-height:1.6}
+.callout b{color:var(--amber)}
+.note{font-size:13.5px;color:var(--sub);line-height:1.6;max-width:66ch}
+.note b{color:var(--txt)}
+ul.note{padding-left:20px;max-width:70ch}
+ul.note li{margin-bottom:7px}
+footer{margin-top:44px;padding-top:18px;border-top:1px solid var(--stroke);
+  font-size:12.5px;color:var(--dim);line-height:1.7}
+@media (max-width:620px){
+  .wrap{padding-inline:16px}
+  .srow{grid-template-columns:100px 1fr}
+  .saddr .addr{display:none}
+  .saddr{font-size:10.5px;padding:8px 7px}
+  .saddr .nm{font-size:12px}
+  .hexv{font-size:12px}
+  .vs{grid-template-columns:1fr}
+  table.trace .c-n,table.trace .c-out{display:none}
+  table.trace{min-width:430px}
+}
+@media (prefers-reduced-motion:reduce){
+  *,.hexv,button{transition:none !important;animation:none !important}
+}
+
+/* Horizontal scroll containers must be keyboard-operable (WCAG 2.1.1).
+   Chrome and Safari only allow arrow-key scrolling when the container
+   is focusable, so each is given tabindex=0 by the script below. */
+[tabindex="0"]:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
+
+/* LINK UNDERLINE: WCAG 1.4.1. A link inside a paragraph must be
+   distinguishable without relying on hue, and our cyan measures under 2:1
+   against the surrounding text. Standalone block links (nav, cards) carry
+   their own position and box, so they stay underline-free. */
+p a, li a, figcaption a, .lic a, .note a, .why a, footer a, .cdesc a{
+  text-decoration:underline; text-underline-offset:2px;
+  text-decoration-thickness:1px; text-decoration-color:color-mix(in srgb,var(--cyan) 55%, transparent);
+}
+p a:hover, li a:hover, footer a:hover{text-decoration-color:var(--cyan)}
+</style>
+</head>
+<body>
+<main class="wrap">
+
+<div class="back"><a href="/">&larr; r00tlv</a> &middot; <a href="/posts/">posts</a></div>
+
+<h1>Walk a format string</h1>
+<p class="lede">Type a format string below and watch <code>printf</code> walk it one conversion
+specifier at a time. Each specifier that consumes an argument is matched against the register or
+the stack slot it actually reads on x86-64, which is not where most tutorials say it is. This is
+the CWE-134 half of <a href="/posts/four-cves-in-twelve-lines-of-c/">four real CVEs in a 12-line C
+program</a>, made clickable.</p>
+
+<h2>The program</h2>
+<pre class="src"><span class="kw">void</span> <span class="fn">handle</span>(<span class="kw">const char</span> *name)
+{
+    <span class="kw">char</span>        buf[<span class="st">24</span>];                                   <span class="cm">/* rbp-0x28 */</span>
+    <span class="kw">const char</span> *msg = <span class="st">"Hello %s!\n"</span>;                     <span class="cm">/* rbp-0x10 */</span>
+    <span class="kw">int</span>         n   = <span class="fn">snprintf</span>(buf, <span class="kw">sizeof</span> buf, <span class="st">"%s"</span>, name);  <span class="cm">/* rbp-0x30 */</span>
+
+    <span class="fn">printf</span>(buf);        <span class="cm">/* CWE-134: name is the format string now */</span>
+}</pre>
+
+<h2>Your format string</h2>
+<div class="controls">
+  <div class="inrow">
+    <input type="text" id="fmt" spellcheck="false" autocomplete="off" maxlength="23"
+           placeholder="type a format string..."
+           aria-label="The format string handed to printf">
+  </div>
+  <div class="presets">
+    <button type="button" data-p="Hello Younas!">harmless greeting</button>
+    <button type="button" data-p="%p %p %p %p">read the registers</button>
+    <button type="button" data-p="%p %p %p %p %p %p %p %p">reach the stack</button>
+    <button type="button" data-p="AAAA.%7$p">find the offset</button>
+    <button type="button" data-p="%s">read a string</button>
+    <button type="button" data-p="%n">arbitrary write</button>
+    <button type="button" data-p="">clear</button>
+  </div>
+  <div class="counter">
+    <span><b id="nb">0</b> of 23 bytes copied into <b>buf[24]</b></span>
+    <span id="nspecs"></span>
+  </div>
+</div>
+
+<div id="results" aria-live="polite">
+  <h2>What printf writes to stdout</h2>
+  <div class="outpane" id="out"></div>
+  <div class="verdict v-ok" id="verdict">
+    <div class="vt" id="vt">Nothing yet</div>
+    <div class="vd" id="vd">Type a format string above, or press one of the buttons.</div>
+  </div>
+</div>
+
+<h2>The walk, one specifier at a time</h2>
+<div class="tablewrap">
+  <table class="trace" id="trace">
+    <thead><tr>
+      <th class="c-n">#</th><th>spec</th><th>arg</th><th>read from</th>
+      <th>value</th><th>prints</th><th class="c-out">bytes out</th>
+    </tr></thead>
+    <tbody id="tbody"></tbody>
+  </table>
+</div>
+
+<h2>Where each argument comes from</h2>
+<div class="stack" id="slots"></div>
+<div class="zone">
+  <span><i class="sw" style="background:var(--amber)"></i>register save area</span>
+  <span><i class="sw" style="background:var(--cyan)"></i>read as a value</span>
+  <span><i class="sw" style="background:var(--green)"></i>dereferenced by %s</span>
+  <span><i class="sw" style="background:var(--red)"></i>written by %n, or faulted</span>
+  <span><i class="sw" style="background:var(--dim)"></i>untouched</span>
+</div>
+
+<div class="callout"><b>The part most write-ups get wrong.</b> On 32-bit x86 every variadic
+argument is pushed onto the stack, so the first <code>%x</code> in a hostile format string reads
+the first stack word straight away. The System V AMD64 convention does not work like that.
+Integer and pointer arguments travel in RDI, RSI, RDX, RCX, R8 and R9, and only the seventh
+onwards is placed in memory. <code>printf</code> spends RDI on the format string itself, so
+variadic arguments one to five live in RSI, RDX, RCX, R8 and R9, and <b>argument six is the first
+one that comes off the stack</b>. That is why <code>%p %p %p %p</code> leaks four registers here
+and touches no stack at all, and why <code>%6$p</code> is the first offset worth typing on this
+target.</div>
+
+<h2>Safe against unsafe</h2>
+<div class="vs">
+  <div class="card safe">
+    <h3>Data stays data</h3>
+    <div class="cline">printf("%s", user);</div>
+    <div class="cout" id="safeout"></div>
+    <div class="cnote" id="safenote"></div>
+  </div>
+  <div class="card unsafe">
+    <h3>Data becomes instructions</h3>
+    <div class="cline">printf(user);</div>
+    <div class="cout" id="unsafeout"></div>
+    <div class="cnote" id="unsafenote"></div>
+  </div>
+</div>
+
+<h2>Why the register detail matters</h2>
+<p class="note"><code>printf</code> is itself a variadic function, so its prologue spills RSI
+through R9 into a register save area on its own frame, and the <code>va_list</code> walks that
+area before it ever looks at the caller. When the caller passed no variadic arguments at all,
+those five registers still hold whatever the preceding code left in them. The first five
+conversions therefore leak register residue, which is usually a pointer into libc or a loop
+counter, and only from the sixth does <code>gp_offset</code> reach 48 and the
+<code>va_list</code> switch over to <code>overflow_arg_area</code>, which points into the
+caller's frame.</p>
+<p class="note">The call site also sets AL to zero, because no vector registers are in use. That
+tells <code>printf</code> to skip the XMM half of the save area entirely, so a <code>%f</code>
+in a hostile format string reads a region that was never filled in. The walk above marks floating
+point conversions as out of scope rather than guessing at them.</p>
+<p class="note">The practical consequence for anyone hunting an offset is that the numbers quoted
+in older write-ups are five too low on this target. The usual approach still works: put a
+recognisable marker at the front of the string, then probe <code>%6$p</code>, <code>%7$p</code>
+and upwards until the marker appears back in the output. Once you can see your own bytes in a
+leaked slot you control both the value and the pointer, and <code>%n</code> turns that into a
+write of your choosing.</p>
+<p class="note">Modern toolchains do push back. GCC and Clang emit
+<code>-Wformat-security</code>, most distributions build with
+<code>-Werror=format-security</code>, and <code>_FORTIFY_SOURCE</code> rejects <code>%n</code>
+when the format string sits in writable memory. Android's bionic dropped <code>%n</code>
+altogether. None of that helps code built without the flags, which is most firmware.</p>
+
+<h2>What this model does not do</h2>
+<ul class="note">
+  <li>Addresses, register residue and slot contents are plausible stand-ins rather than a capture
+  from a running process. There is no ASLR, and the frame is laid out for a System V AMD64 target
+  with the frame pointer kept.</li>
+  <li>Only a handful of addresses have known contents. Anything inside the modelled stack, libc or
+  image ranges counts as readable, and where the bytes are not modelled the output shows a
+  placeholder rather than inventing them.</li>
+  <li>Register residue is not predictable in a real program. What the preceding library call
+  leaves in RSI through R9 depends on the libc build, the input and the optimisation level.</li>
+  <li><code>%n</code> is shown as a write, but the written bytes are not fed back into the model.
+  A real <code>printf</code> parses the format as it goes, so a write landing inside
+  <code>buf</code> would change the rest of the walk.</li>
+  <li>Floating point conversions take their argument from the SSE save area, not from the integer
+  registers or the stack, so they are listed and skipped.</li>
+  <li>Width and precision are handled for the common cases. The <code>'</code> grouping flag,
+  <code>%a</code>, and locale effects are not modelled.</li>
+  <li>The four padding bytes above the <code>int n</code> at <code>rbp-0x30</code> are shown as
+  zero. A real frame holds whatever was there before.</li>
+  <li>The byte counter that <code>%n</code> reports uses UTF-8 byte length, which is what
+  <code>printf</code> would count. Characters outside the Basic Multilingual Plane are not encoded
+  correctly by the counter.</li>
+  <li>Field widths and precisions above 512 are clamped by this page so the output pane stays
+  readable. A real <code>printf</code> honours them, which is how a single <code>%n</code> is made
+  to store a large value.</li>
+  <li>Output appears here as soon as it is produced. A real <code>printf</code> writing to a
+  terminal is line buffered, so a crash partway through usually loses everything written since the
+  last newline.</li>
+</ul>
+
+<footer>Part of <a href="https://r00tlv.me">r00tlv.me</a>, and a companion to
+<a href="/posts/four-cves-in-twelve-lines-of-c/">four real CVEs in a 12-line C program</a>.
+Nothing here runs native code; the walk is a model of glibc's behaviour on x86-64, not a
+reimplementation of it. Free to embed or link.</footer>
+
+</main>
+
+<script>
+(function () {
+  'use strict';
+
+  /* ---------- the modelled process image ---------------------------------
+     Everything below is a plausible System V AMD64 frame with no ASLR.
+     rbp = 0x00007ffd3c8a2210, rsp at the call = rbp-0x30.
+     buf lives at rbp-0x28, which is variadic argument 7 onwards.          */
+
+  function B(h) { return BigInt('0x' + h); }
+  function hx16(v) { var s = v.toString(16); while (s.length < 16) s = '0' + s; return s; }
+  function esc(s) {
+    return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  var BUF_LO = B('00007ffd3c8a21e8'), BUF_SZ = 24;
+
+  var RANGES = [
+    { lo: '0000000000400000', hi: '0000000000404fff', nm: 'image, read only', w: false },
+    { lo: '00007f9c2a000000', hi: '00007f9c2a1aefff', nm: 'libc text, read only', w: false },
+    { lo: '00007f9c2a1af000', hi: '00007f9c2a1b5fff', nm: 'libc data', w: true },
+    { lo: '00007ffd3c8a1000', hi: '00007ffd3c8a2fff', nm: 'stack', w: true }
+  ];
+
+  var STRINGS = {
+    '0000000000402008': 'Hello %s!\n',
+    '0000000000402013': 'Usage: %s <name>\n'
+  };
+
+  var REGS = [
+    { nm: 'rsi', hex: '00007ffd3c8a21e8', desc: 'stack: a pointer to buf, residue from the copy' },
+    { nm: 'rdx', hex: '00007f9c2a1b47a0', desc: 'libc data: residue from inside snprintf()' },
+    { nm: 'rcx', hex: '0000000000000018', desc: 'the integer 24, residue from sizeof buf' },
+    { nm: 'r8',  hex: '0000000000000000', desc: 'zero' },
+    { nm: 'r9',  hex: '00007f9c2a1b4980', desc: 'libc data: residue from inside snprintf()' }
+  ];
+
+  var SLOTS = [
+    { lbl: 'rbp-0x30', at: '00007ffd3c8a21e0', dyn: 'n',
+      desc: 'int n, what snprintf() returned, with four zero padding bytes above it', tag: 'int' },
+    { lbl: 'rbp-0x28', at: '00007ffd3c8a21e8', dyn: 'b0',
+      desc: 'buf[0..7], your own input read back little-endian', tag: 'buf' },
+    { lbl: 'rbp-0x20', at: '00007ffd3c8a21f0', dyn: 'b8',
+      desc: 'buf[8..15], your input continued', tag: 'buf' },
+    { lbl: 'rbp-0x18', at: '00007ffd3c8a21f8', dyn: 'b16',
+      desc: 'buf[16..23], your input continued', tag: 'buf' },
+    { lbl: 'rbp-0x10', at: '00007ffd3c8a2200', hex: '0000000000402008',
+      desc: 'const char *msg, pointing at "Hello %s!" in .rodata', tag: 'rodata' },
+    { lbl: 'rbp-0x08', at: '00007ffd3c8a2208', hex: '00007f9c2a029d90',
+      desc: 'libc text: a spilled return address into __libc_start_call_main', tag: 'libc' },
+    { lbl: 'rbp+0x00', at: '00007ffd3c8a2210', hex: '00007ffd3c8a22f0',
+      desc: 'saved RBP, the caller frame pointer', tag: 'rbp' },
+    { lbl: 'rbp+0x08', at: '00007ffd3c8a2218', hex: '000000000040124b',
+      desc: 'saved return address into main()', tag: 'ret' }
+  ];
+
+  /* ---------- helpers ---------------------------------------------------- */
+
+  function u8(s) {
+    var out = [], i, c;
+    for (i = 0; i < s.length; i++) {
+      c = s.charCodeAt(i);
+      if (c < 0x80) out.push(c);
+      else if (c < 0x800) out.push(0xc0 | c >> 6, 0x80 | c & 63);
+      else out.push(0xe0 | c >> 12, 0x80 | c >> 6 & 63, 0x80 | c & 63);
+    }
+    return out;
+  }
+  function qw(bytes, off) {
+    var v = 0n, i;
+    for (i = 7; i >= 0; i--) v = (v << 8n) | BigInt(off + i < bytes.length ? bytes[off + i] : 0);
+    return v;
+  }
+  function rangeOf(v) {
+    for (var i = 0; i < RANGES.length; i++) {
+      if (v >= B(RANGES[i].lo) && v <= B(RANGES[i].hi)) return RANGES[i];
+    }
+    return null;
+  }
+  function pad(body, width, left, zero) {
+    if (!width || body.length >= width) return body;
+    var fill = new Array(width - body.length + 1).join(left ? ' ' : (zero ? '0' : ' '));
+    return left ? body + fill : fill + body;
+  }
+
+  /* ---------- the model, rebuilt on every keystroke ----------------------- */
+
+  var M = null;
+
+  function build(input) {
+    var raw = u8(input);
+    var kept = raw.slice(0, BUF_SZ - 1);
+    var bb = kept.slice();
+    bb.push(0);
+    while (bb.length < BUF_SZ) bb.push(0);
+
+    var fmt = '', i;
+    for (i = 0; i < kept.length; i++) fmt += String.fromCharCode(kept[i]);
+
+    var regs = REGS.map(function (r) {
+      return { nm: r.nm, desc: r.desc, v: B(r.hex), at: null };
+    });
+    var dyn = { n: BigInt(raw.length), b0: qw(bb, 0), b8: qw(bb, 8), b16: qw(bb, 16) };
+    var slots = SLOTS.map(function (s) {
+      return { nm: s.lbl, desc: s.desc, tag: s.tag, at: B(s.at),
+               v: s.dyn ? dyn[s.dyn] : B(s.hex) };
+    });
+    return { raw: raw, kept: kept, bb: bb, fmt: fmt, regs: regs, slots: slots,
+             truncated: raw.length > kept.length };
+  }
+
+  function argAt(ord) {
+    if (ord <= 5) {
+      var r = M.regs[ord - 1];
+      return { where: 'reg', nm: r.nm, v: r.v, idx: ord - 1, desc: r.desc };
+    }
+    if (ord <= 13) {
+      var s = M.slots[ord - 6];
+      return { where: 'stk', nm: s.nm, v: s.v, idx: ord - 6, desc: s.desc, tag: s.tag };
+    }
+    return { where: 'far', nm: 'past slot 13', v: null, idx: -1, desc: '' };
+  }
+
+  function readStr(v) {
+    if (v === 0n) return { k: 'null' };
+    if (v >= BUF_LO && v < BUF_LO + BigInt(BUF_SZ)) {
+      var off = Number(v - BUF_LO), s = '';
+      for (var i = off; i < BUF_SZ; i++) { if (M.bb[i] === 0) break; s += String.fromCharCode(M.bb[i]); }
+      return { k: 'str', s: s, from: 'buf+' + off };
+    }
+    var h = hx16(v);
+    if (Object.prototype.hasOwnProperty.call(STRINGS, h)) return { k: 'str', s: STRINGS[h], from: '.rodata' };
+    var r = rangeOf(v);
+    if (r) return { k: 'unk', nm: r.nm };
+    return { k: 'fault' };
+  }
+
+  function canWrite(v) {
+    if (v === 0n) return { ok: false, why: 'a NULL pointer' };
+    var r = rangeOf(v);
+    if (!r) return { ok: false, why: 'not mapped in this model' };
+    if (!r.w) return { ok: false, why: r.nm };
+    return { ok: true, nm: r.nm };
+  }
+
+  /* ---------- conversion rendering --------------------------------------- */
+
+  function bitsOf(len, conv) {
+    if (conv === 'p') return 64;
+    if (len === 'hh') return 8;
+    if (len === 'h') return 16;
+    if (len === 'l' || len === 'll' || len === 'j' || len === 'z' || len === 't') return 64;
+    return 32;
+  }
+  function maskTo(v, b) {
+    if (b >= 64) return v & 0xffffffffffffffffn;
+    return v & ((1n << BigInt(b)) - 1n);
+  }
+  function signedOf(v, b) {
+    var m = maskTo(v, b), half = 1n << BigInt(b - 1);
+    return m >= half ? m - (1n << BigInt(b)) : m;
+  }
+  function renderNum(v, conv, len, fl, width, prec) {
+    var b = bitsOf(len, conv), sign = '', pfx = '', body;
+    if (conv === 'd' || conv === 'i') {
+      var s = signedOf(v, b);
+      if (s < 0n) { sign = '-'; body = (-s).toString(10); }
+      else {
+        body = s.toString(10);
+        if (fl.indexOf('+') >= 0) sign = '+'; else if (fl.indexOf(' ') >= 0) sign = ' ';
+      }
+    } else if (conv === 'u') {
+      body = maskTo(v, b).toString(10);
+    } else if (conv === 'o') {
+      body = maskTo(v, b).toString(8);
+    } else {
+      body = maskTo(v, b).toString(16);
+      if (conv === 'X') body = body.toUpperCase();
+    }
+    if (prec !== null) {
+      if (prec === 0 && /^0+$/.test(body)) body = '';
+      while (body.length < prec) body = '0' + body;
+    }
+    if (fl.indexOf('#') >= 0) {
+      if ((conv === 'x' || conv === 'X') && !/^0*$/.test(body)) pfx = (conv === 'x' ? '0x' : '0X');
+      if (conv === 'o' && body.charAt(0) !== '0') body = '0' + body;
+    }
+    var left = fl.indexOf('-') >= 0;
+    var zero = fl.indexOf('0') >= 0 && !left && prec === null;
+    if (zero && width && (sign + pfx + body).length < width) {
+      body = pad(body, width - sign.length - pfx.length, false, true);
+    }
+    return pad(sign + pfx + body, width, left, false);
+  }
+
+  /* ---------- the walk ---------------------------------------------------- */
+
+  var WMAX = 512;   /* field width and precision cap, so the output pane stays usable */
+  var SPEC = /^(?:(\d{1,3})\$)?([-+ #0']*)(\d{1,5}|\*)?(\.(?:\d{1,5}|\*)?)?(hh|h|ll|l|j|z|t|L)?([diouxXeEfFgGaAcspn])/;
+
+  function walk(fmt) {
+    var toks = [], steps = [], used = {}, out = 0, exact = true, fault = null;
+    var next = 1, nspec = 0, maxOrd = 0, writes = [], stackHits = 0, leaked = [];
+    var nskip = 0, nfar = 0;
+    var sawPos = false, sawPlain = false, lit = '', i = 0;
+
+    /* every token is a byte string, one char code per byte, so length is the byte count */
+    function emit(t, s) { toks.push({ t: t, s: s }); if (exact) out += s.length; }
+    function mark(ord, kind, step) { (used[ord] = used[ord] || []).push({ k: kind, n: step }); }
+    function flushLit() {
+      if (!lit) return;
+      emit('lit', lit);
+      steps.push({ kind: 'lit', spec: lit, out: out });
+      lit = '';
+    }
+    function note(a) {
+      if (a && a.where === 'stk') { stackHits++; if (leaked.indexOf(a.tag) < 0) leaked.push(a.tag); }
+    }
+
+    while (i < fmt.length) {
+      var ch = fmt.charAt(i);
+      if (ch !== '%') { lit += ch; i++; continue; }
+
+      if (i + 1 >= fmt.length) {
+        flushLit();
+        steps.push({ kind: 'bad', spec: '%', out: out,
+          note: 'a trailing % with nothing after it is undefined behaviour' });
+        i++; continue;
+      }
+      if (fmt.charAt(i + 1) === '%') {
+        flushLit();
+        emit('conv', '%');
+        steps.push({ kind: 'pct', spec: '%%', out: out });
+        i += 2; continue;
+      }
+
+      var m = SPEC.exec(fmt.slice(i + 1));
+      if (!m) {
+        flushLit();
+        var badTxt = fmt.substr(i, 2);
+        emit('lit', badTxt);
+        steps.push({ kind: 'bad', spec: badTxt, out: out,
+          note: 'not a conversion glibc knows, so it is copied through and nothing is consumed' });
+        i += 2; continue;
+      }
+
+      flushLit();
+      var whole = '%' + m[0];
+      var ord = m[1] ? parseInt(m[1], 10) : 0;
+      var fl = m[2] || '', wTok = m[3] || '', pTok = m[4] || '';
+      var len = m[5] || '', conv = m[6];
+      i += 1 + m[0].length;
+
+      var width = 0, prec = null, a, o, stepNo;
+
+      if (wTok === '*') {
+        o = next++; sawPlain = true; if (o > maxOrd) maxOrd = o;
+        a = argAt(o); note(a); stepNo = steps.length + 1; mark(o, 'read', stepNo);
+        var wv = a.v === null ? 0 : Number(signedOf(a.v, 32));
+        if (wv < 0) { fl += '-'; width = -wv; } else width = wv;
+        var clamped = width > WMAX;
+        if (clamped) width = WMAX;
+        steps.push({ kind: 'star', spec: '*', ord: o, src: a, out: out,
+          note: 'field width taken from an argument: ' + width +
+                (clamped ? ', clamped by this page' : '') });
+      } else if (wTok) {
+        width = Math.min(parseInt(wTok, 10), WMAX);
+      }
+
+      if (pTok === '.*') {
+        o = next++; sawPlain = true; if (o > maxOrd) maxOrd = o;
+        a = argAt(o); note(a); stepNo = steps.length + 1; mark(o, 'read', stepNo);
+        var pv = a.v === null ? 0 : Number(signedOf(a.v, 32));
+        prec = pv < 0 ? null : Math.min(pv, WMAX);
+        steps.push({ kind: 'star', spec: '.*', ord: o, src: a, out: out,
+          note: 'precision taken from an argument: ' + (prec === null ? 'none' : prec) });
+      } else if (pTok === '.') {
+        prec = 0;
+      } else if (pTok) {
+        prec = Math.min(parseInt(pTok.slice(1), 10), WMAX);
+      }
+
+      if ('eEfFgGaA'.indexOf(conv) >= 0) {
+        nskip++;
+        exact = false;
+        emit('unk', '');
+        steps.push({ kind: 'skip', spec: whole, out: out,
+          note: 'floating point: the argument comes from the SSE save area, which was never filled in because AL was zero at the call' });
+        continue;
+      }
+
+      o = ord ? ord : next++;
+      if (ord) sawPos = true; else sawPlain = true;
+      if (o > maxOrd) maxOrd = o;
+      nspec++;
+      a = argAt(o); note(a);
+      stepNo = steps.length + 1;
+
+      if (a.v === null) {
+        nfar++;
+        exact = false;
+        emit('unk', '');
+        steps.push({ kind: 'far', spec: whole, ord: o, src: a, out: out,
+          note: 'argument ' + o + ' sits above the eight stack slots modelled here' });
+        continue;
+      }
+
+      if (conv === 'n') {
+        var nb = (len === 'hh') ? 1 : (len === 'h') ? 2 :
+                 (len === 'l' || len === 'll' || len === 'z' || len === 'j' || len === 't') ? 8 : 4;
+        var w = canWrite(a.v);
+        if (!w.ok) {
+          mark(o, 'fault', stepNo);
+          fault = { step: stepNo, spec: whole, kind: 'write', addr: hx16(a.v), why: w.why, src: a, ord: o };
+          steps.push({ kind: 'nfault', spec: whole, ord: o, src: a, out: out, bytes: nb, why: w.why });
+          break;
+        }
+        mark(o, 'write', stepNo);
+        var rec = { step: stepNo, addr: hx16(a.v), count: exact ? out : null,
+                    bytes: nb, ord: o, src: a, region: w.nm };
+        writes.push(rec);
+        steps.push({ kind: 'n', spec: whole, ord: o, src: a, out: out, bytes: nb,
+                     count: exact ? out : null, region: w.nm });
+        continue;
+      }
+
+      if (conv === 's') {
+        var d = readStr(a.v);
+        if (d.k === 'fault') {
+          mark(o, 'fault', stepNo);
+          fault = { step: stepNo, spec: whole, kind: 'read', addr: hx16(a.v), src: a, ord: o };
+          steps.push({ kind: 'sfault', spec: whole, ord: o, src: a, out: out });
+          break;
+        }
+        if (d.k === 'unk') {
+          mark(o, 'deref', stepNo);
+          exact = false;
+          emit('unk', '');
+          steps.push({ kind: 'sunk', spec: whole, ord: o, src: a, out: out, region: d.nm });
+          continue;
+        }
+        var stxt = (d.k === 'null') ? '(null)' : d.s;
+        if (prec !== null && d.k !== 'null') stxt = stxt.slice(0, prec);
+        stxt = pad(stxt, width, fl.indexOf('-') >= 0, false);
+        mark(o, 'deref', stepNo);
+        emit('conv', stxt);
+        steps.push({ kind: 's', spec: whole, ord: o, src: a, out: out, text: stxt,
+                     nul: d.k === 'null', from: d.from });
+        continue;
+      }
+
+      if (conv === 'c') {
+        var cc = Number(maskTo(a.v, 8));
+        var ctxt = pad(String.fromCharCode(cc), width, fl.indexOf('-') >= 0, false);
+        mark(o, 'read', stepNo);
+        emit('conv', ctxt);
+        steps.push({ kind: 'c', spec: whole, ord: o, src: a, out: out, text: ctxt, code: cc });
+        continue;
+      }
+
+      var ntxt;
+      if (conv === 'p') {
+        var pval = maskTo(a.v, 64);
+        ntxt = pad(pval === 0n ? '(nil)' : '0x' + pval.toString(16), width, fl.indexOf('-') >= 0, false);
+      } else {
+        ntxt = renderNum(a.v, conv, len, fl, width, prec);
+      }
+      mark(o, 'read', stepNo);
+      emit('conv', ntxt);
+      steps.push({ kind: 'num', spec: whole, ord: o, src: a, out: out, text: ntxt,
+                   bits: bitsOf(len, conv) });
+    }
+
+    if (!fault) flushLit();
+
+    return { toks: toks, steps: steps, used: used, out: out, exact: exact, fault: fault,
+             nspec: nspec, maxOrd: maxOrd, writes: writes, stackHits: stackHits,
+             nskip: nskip, nfar: nfar,
+             leaked: leaked, sawPos: sawPos, sawPlain: sawPlain };
+  }
+
+  /* ---------- rendering --------------------------------------------------- */
+
+  function vis(s) {
+    var h = '', i, c;
+    for (i = 0; i < s.length; i++) {
+      c = s.charCodeAt(i);
+      if (c === 10) h += '<span class="o-esc">\\n</span>';
+      else if (c === 9) h += '<span class="o-esc">\\t</span>';
+      else if (c < 32 || c >= 127) h += '<span class="o-esc">\\x' + ('0' + c.toString(16)).slice(-2) + '</span>';
+      else h += esc(String.fromCharCode(c));
+    }
+    return h;
+  }
+  function clip(s, n) { return s.length > n ? s.slice(0, n) + '…' : s; }
+  function hexOf(v) { return '0x' + hx16(v); }
+
+  function srcCell(a) {
+    if (!a) return '<span class="src-none">-</span>';
+    if (a.where === 'reg') return '<span class="src-reg">' + esc(a.nm) + ', register save area</span>';
+    if (a.where === 'stk') return '<span class="src-stk">' + esc(a.nm) + ', caller frame</span>';
+    return '<span class="src-none">' + esc(a.nm) + '</span>';
+  }
+
+  function traceHtml(r) {
+    if (!r.steps.length) {
+      return '<tr><td colspan="7"><div class="emptyrow">Nothing to walk. The format string is empty.</div></td></tr>';
+    }
+    var h = '', k;
+    for (k = 0; k < r.steps.length; k++) {
+      var st = r.steps[k], cls = '', spec, arg, src, val, prints;
+      arg = (typeof st.ord === 'number') ? String(st.ord) : '<span class="src-none">none</span>';
+      src = srcCell(st.src);
+      val = st.src && st.src.v !== null && st.src.v !== undefined
+          ? esc(hexOf(st.src.v)) : '<span class="src-none">-</span>';
+      spec = esc(st.spec === undefined ? '' : st.spec);
+      prints = '';
+
+      switch (st.kind) {
+        case 'lit':
+          spec = '<span class="pr-dim">text</span>';
+          arg = '<span class="src-none">none</span>';
+          prints = '<span class="pr">' + vis(clip(st.spec, 24)) + '</span>';
+          break;
+        case 'pct':
+          arg = '<span class="src-none">none</span>';
+          prints = '<span class="pr">%</span>';
+          break;
+        case 'bad':
+          arg = '<span class="src-none">none</span>';
+          prints = '<span class="pr-dim">' + esc(st.note) + '</span>';
+          break;
+        case 'skip':
+          arg = '<span class="src-none">SSE</span>';
+          prints = '<span class="pr-dim">' + esc(st.note) + '</span>';
+          break;
+        case 'far':
+          prints = '<span class="pr-dim">' + esc(st.note) + '</span>';
+          break;
+        case 'star':
+          prints = '<span class="pr-dim">' + esc(st.note) + '</span>';
+          break;
+        case 'n':
+          cls = ' class="r-write"';
+          prints = '<span class="pr-bad">writes ' +
+                   (st.count === null ? 'an unknown count' : st.count) +
+                   ' as ' + st.bytes + ' byte' + (st.bytes === 1 ? '' : 's') +
+                   ' to ' + esc(hexOf(st.src.v)) + '</span>' +
+                   '<span class="pr-dim"> (' + esc(st.region) + ')</span>';
+          break;
+        case 'nfault':
+          cls = ' class="r-fault"';
+          prints = '<span class="pr-bad">write to ' + esc(hexOf(st.src.v)) +
+                   ' faults: ' + esc(st.why) + '</span>';
+          break;
+        case 'sfault':
+          cls = ' class="r-fault"';
+          prints = '<span class="pr-bad">deref of ' + esc(hexOf(st.src.v)) +
+                   ' faults: not mapped</span>';
+          break;
+        case 'sunk':
+          prints = '<span class="pr-dim">readable (' + esc(st.region) +
+                   ') but the bytes there are not modelled</span>';
+          break;
+        case 's':
+          prints = '<span class="pr">' + vis(clip(st.text, 32)) + '</span>' +
+                   (st.nul ? '<span class="pr-dim"> (glibc prints this for a NULL pointer)</span>'
+                           : '<span class="pr-dim"> (from ' + esc(st.from || 'memory') + ')</span>');
+          break;
+        case 'c':
+          prints = '<span class="pr">' + vis(st.text) + '</span>' +
+                   '<span class="pr-dim"> (low byte, 0x' + ('0' + st.code.toString(16)).slice(-2) + ')</span>';
+          break;
+        default:
+          prints = '<span class="pr">' + vis(st.text) + '</span>' +
+                   '<span class="pr-dim"> (low ' + st.bits + ' bits)</span>';
+      }
+      h += '<tr' + cls + '><td class="c-n">' + (k + 1) + '</td>' +
+           '<td class="c-spec">' + spec + '</td>' +
+           '<td class="c-src">' + arg + '</td>' +
+           '<td class="c-src">' + src + '</td>' +
+           '<td class="c-val">' + val + '</td>' +
+           '<td>' + prints + '</td>' +
+           '<td class="c-out">' + st.out + '</td></tr>';
+    }
+    return h;
+  }
+
+  function hitInfo(ord, used) {
+    var u = used[ord];
+    if (!u) return null;
+    var rank = { read: 1, deref: 2, fault: 3, write: 4 }, best = 'read', i;
+    for (i = 0; i < u.length; i++) if (rank[u[i].k] > rank[best]) best = u[i].k;
+    var ns = u.map(function (x) { return x.n; });
+    var verb = { read: 'read', deref: 'dereferenced by %s',
+                 fault: 'faulted here', write: 'written by %n' }[best];
+    return { cls: 's-' + best,
+             text: verb + ' at ' + (ns.length > 1 ? 'steps ' : 'step ') + ns.join(', ') };
+  }
+
+  function slotsHtml(r) {
+    var h = '', i;
+    for (i = 0; i < M.regs.length; i++) {
+      var ord = i + 1, g = M.regs[i], hit = hitInfo(ord, r.used);
+      h += '<div class="srow' + (hit ? ' ' + hit.cls : '') + '">' +
+           '<div class="saddr"><span class="nm">' + esc(g.nm) + '</span><span>arg ' + ord + '</span></div>' +
+           '<div class="sval"><span class="hexv">' + esc(hexOf(g.v)) + '</span>' +
+           '<span class="sdesc">' + esc(g.desc) + '</span>' +
+           (hit ? '<span class="shit">' + esc(hit.text) + '</span>' : '') +
+           '</div></div>';
+    }
+    h += '<div class="sdiv">gp_offset reaches 48 here. From arg 6 onwards the va_list reads ' +
+         'overflow_arg_area, which points into the caller frame.</div>';
+    for (i = 0; i < M.slots.length; i++) {
+      var o2 = i + 6, s = M.slots[i], h2 = hitInfo(o2, r.used);
+      h += '<div class="srow' + (h2 ? ' ' + h2.cls : '') + '">' +
+           '<div class="saddr"><span class="nm">arg ' + o2 + '</span><span>' + esc(s.nm) + '</span>' +
+           '<span class="addr">' + esc(hexOf(s.at)) + '</span></div>' +
+           '<div class="sval"><span class="hexv">' + esc(hexOf(s.v)) + '</span>' +
+           '<span class="sdesc">' + esc(s.desc) + '</span>' +
+           (h2 ? '<span class="shit">' + esc(h2.text) + '</span>' : '') +
+           '</div></div>';
+    }
+    return h;
+  }
+
+  var TAGTEXT = {
+    ret: 'the saved return address into main(), which gives away the load address of the image and takes PIE with it',
+    rbp: 'the saved frame pointer, which gives away a live stack address',
+    libc: 'a libc text address, which gives away the libc base and the whole of its gadget set',
+    rodata: 'a pointer into .rodata',
+    int: 'a local integer',
+    buf: 'your own input read back as little-endian integers, which is how you confirm the argument index your buffer sits at'
+  };
+
+  function joinList(a) {
+    if (a.length === 1) return a[0];
+    if (a.length === 2) return a[0] + ' and ' + a[1];
+    return a.slice(0, -1).join(', ') + ', and ' + a[a.length - 1];
+  }
+
+  function verdictOf(r, input) {
+    var cls, t, d, extra = '';
+    if (r.sawPos && r.sawPlain) {
+      extra += ' This string mixes positional conversions with plain ones. POSIX says a format ' +
+               'should use one style throughout, so the result is not portable even though glibc copes.';
+    }
+    if (M.truncated) {
+      extra += ' snprintf() kept only the first ' + (BUF_SZ - 1) + ' bytes, so printf never sees the rest.';
+    }
+
+    if (!input.length) {
+      return { cls: 'v-ok', t: 'Nothing yet',
+        d: 'Type a format string above, or press one of the buttons. The page opens with six ' +
+           '<code>%p</code> conversions so that the handover from registers to stack is visible ' +
+           'before you touch anything.' };
+    }
+
+    if (r.fault) {
+      cls = 'v-bad';
+      var f = r.fault;
+      if (f.kind === 'read') {
+        t = 'SIGSEGV: %s followed a pointer that is not mapped';
+        d = 'Step ' + f.step + ' ran <code>' + esc(f.spec) + '</code> against argument ' + f.ord +
+            ', which holds <code>' + esc('0x' + f.addr) + '</code>. <code>%s</code> treats that ' +
+            'number as a pointer and walks it looking for a NUL terminator. Nothing is mapped ' +
+            'there, so the process takes SIGSEGV inside the string length scan and never returns. ' +
+            'The ' + r.out + ' bytes already produced are still sitting in the stdio buffer, and ' +
+            'on a line buffered terminal they die with the process.';
+        if (f.src && f.src.tag === 'buf') {
+          d += ' The value came from your own input read back as a little-endian integer, which ' +
+               'is why a run of letters turns into an address like <code>0x4141414141414141</code>.';
+        }
+      } else {
+        t = 'SIGSEGV: %n tried to write to memory it cannot touch';
+        d = 'Step ' + f.step + ' ran <code>' + esc(f.spec) + '</code> against argument ' + f.ord +
+            ', which holds <code>' + esc('0x' + f.addr) + '</code>. That address is ' +
+            esc(f.why) + ', so the store faults and the process dies. A <code>%n</code> landing ' +
+            'on a read-only mapping is a crash. One landing on writable memory is a weapon, which ' +
+            'is the whole difference between a denial of service and a shell.';
+      }
+      return { cls: cls, t: t, d: d + extra };
+    }
+
+    if (r.writes.length) {
+      var w = r.writes[r.writes.length - 1];
+      return { cls: 'v-bad',
+        t: 'Arbitrary write: %n stored ' + (w.count === null ? 'a count' : w.count) +
+           ' at 0x' + w.addr,
+        d: '<code>%n</code> prints nothing. It takes the pointer sitting in argument ' + w.ord +
+           ' (' + esc(w.src.nm) + ') and stores the number of bytes <code>printf</code> has ' +
+           'written so far' + (w.count === null ? '' : ', here ' + w.count) + ', as a ' +
+           w.bytes + '-byte integer at <code>0x' + w.addr + '</code> in ' + esc(w.region) + '. ' +
+           'The count is the lever and a field width sets it, so <code>%100c%' + w.ord +
+           '$n</code> stores 100 and <code>%200x%' + w.ord + '$n</code> stores 200. Pair that ' +
+           'with <code>%hn</code> or <code>%hhn</code> to lay a 64-bit value down two bytes or ' +
+           'one byte at a time, and take the address from a slot you already control. Value plus ' +
+           'address is the entire primitive, and the usual target is an entry in the GOT or a ' +
+           'saved return address.' + extra };
+    }
+
+    if (r.stackHits > 0) {
+      var parts = r.leaked.filter(function (x) { return TAGTEXT[x]; }).map(function (x) { return TAGTEXT[x]; });
+      return { cls: 'v-leak',
+        t: 'Information disclosure: ' + r.stackHits + ' read' + (r.stackHits === 1 ? '' : 's') +
+           ' came off the stack',
+        d: 'This leaked ' + (parts.length ? joinList(parts) : 'stack contents') + '. ' +
+           'Nothing crashed and nothing appeared in a log, which is what makes this stage of an ' +
+           'attack so quiet. A leak like this is the step that turns a blind bug into an aimed ' +
+           'one: once the image base, the libc base and a stack address are known, every later ' +
+           'address can be computed rather than guessed.' + extra };
+    }
+
+    if (r.nfar) {
+      return { cls: 'v-warn', t: 'Argument index past the eight slots modelled here',
+        d: 'Argument ' + r.maxOrd + ' sits above the eight stack qwords this page models, so ' +
+           'there is nothing to show for it. A real <code>printf</code> keeps reading up the ' +
+           'caller frame and out into whatever lies beyond, which is how a long run of ' +
+           '<code>%p</code> eventually walks into environment strings and the auxiliary vector. ' +
+           'Pick an index between 6 and 13 to stay inside the model.' + extra };
+    }
+
+    if (r.nskip) {
+      return { cls: 'v-warn', t: 'Floating point conversion, left out of the walk',
+        d: 'A conversion such as <code>%f</code> takes its argument from the SSE save area ' +
+           'rather than from the integer registers or the stack. The call site set AL to zero ' +
+           'because no vector registers were in use, so <code>printf</code> never filled that ' +
+           'area in and the conversion reads whatever happened to be sitting there. The walk ' +
+           'lists the specifier and moves on rather than inventing a value for it.' + extra };
+    }
+
+    if (r.nspec === 0) {
+      return { cls: 'v-ok', t: 'Nothing interpreted',
+        d: 'There is no conversion specifier in this string, so <code>printf</code> copies ' +
+           r.out + ' byte' + (r.out === 1 ? '' : 's') + ' to stdout and consumes no variadic ' +
+           'arguments. The bug is still there in <code>printf(buf)</code>. This input just did ' +
+           'not reach for it.' + extra };
+    }
+
+    return { cls: 'v-warn', t: 'Register residue only: the stack was never reached',
+      d: 'All ' + r.nspec + ' conversion' + (r.nspec === 1 ? '' : 's') + ' drew from RSI, RDX, ' +
+         'RCX, R8 and R9 by way of the register save area, because the first five variadic ' +
+         'arguments on this target are passed in registers. The same string on 32-bit x86 would ' +
+         'have dumped the stack. Here it dumps whatever the preceding library call happened to ' +
+         'leave in five registers, which varies between libc builds and between runs. ' +
+         'Argument 6 is the first one fetched from <code>overflow_arg_area</code>, so ' +
+         '<code>%6$p</code> is where a stack leak starts.' + extra };
+  }
+
+  /* ---------- wiring ------------------------------------------------------ */
+
+  var elIn     = document.getElementById('fmt');
+  var elNB     = document.getElementById('nb');
+  var elNS     = document.getElementById('nspecs');
+  var elOut    = document.getElementById('out');
+  var elV      = document.getElementById('verdict');
+  var elVT     = document.getElementById('vt');
+  var elVD     = document.getElementById('vd');
+  var elBody   = document.getElementById('tbody');
+  var elSlots  = document.getElementById('slots');
+  var elSafe   = document.getElementById('safeout');
+  var elSafeN  = document.getElementById('safenote');
+  var elUnsafe = document.getElementById('unsafeout');
+  var elUnsafeN = document.getElementById('unsafenote');
+
+  function outHtml(r) {
+    var h = '', i;
+    for (i = 0; i < r.toks.length; i++) {
+      var t = r.toks[i];
+      if (t.t === 'unk') { h += '<span class="o-unk">[bytes not modelled]</span>'; continue; }
+      h += '<span class="o-' + t.t + '">' + vis(t.s) + '</span>';
+    }
+    if (r.fault) h += '<span class="o-fault">  *** SIGSEGV at step ' + r.fault.step + ' ***</span>';
+    return h || '<span class="o-empty">(printf wrote nothing)</span>';
+  }
+
+  function render() {
+    M = build(elIn.value);
+    var r = walk(M.fmt);
+
+    elNB.textContent = M.kept.length;
+    if (r.nspec) {
+      elNS.textContent = r.nspec + ' conversion' + (r.nspec === 1 ? '' : 's') +
+                         ', highest argument index ' + r.maxOrd;
+      elNS.style.color = r.maxOrd >= 6 ? 'var(--cyan)' : 'var(--amber)';
+    } else {
+      elNS.textContent = 'no conversions';
+      elNS.style.color = 'var(--sub)';
+    }
+
+    elOut.innerHTML = outHtml(r);
+
+    var v = verdictOf(r, M.fmt);
+    elV.className = 'verdict ' + v.cls;
+    elVT.textContent = v.t;
+    elVD.innerHTML = v.d;
+
+    elBody.innerHTML = traceHtml(r);
+    elSlots.innerHTML = slotsHtml(r);
+
+    elSafe.innerHTML = M.fmt.length
+      ? '<span class="o-lit">' + vis(M.fmt) + '</span>'
+      : '<span class="o-empty">(nothing to print)</span>';
+    elSafeN.innerHTML = 'The format is a constant with one conversion in it, so the count of ' +
+      'conversions is fixed by the source code. <code>printf</code> reads one pointer argument ' +
+      'from RSI and copies the ' + M.kept.length + ' byte' + (M.kept.length === 1 ? '' : 's') +
+      ' behind it. Nothing you typed is parsed as structure.';
+
+    elUnsafe.innerHTML = outHtml(r);
+    var summary;
+    if (r.fault) {
+      summary = 'Faulted at step ' + r.fault.step + ' after ' + r.out + ' byte' +
+                (r.out === 1 ? '' : 's') + '.';
+    } else if (r.writes.length) {
+      summary = r.nspec + ' conversion' + (r.nspec === 1 ? '' : 's') + ', ' + r.writes.length +
+                ' write' + (r.writes.length === 1 ? '' : 's') + ' to memory.';
+    } else {
+      summary = r.nspec + ' conversion' + (r.nspec === 1 ? '' : 's') + ' consumed ' + r.nspec +
+                ' argument' + (r.nspec === 1 ? '' : 's') + ', ' + r.stackHits + ' of them off ' +
+                'the stack.';
+    }
+    elUnsafeN.innerHTML = 'The input is the format, so the input decides how many arguments are ' +
+      'read and what is done with them. ' + esc(summary) + ' The caller passed none of them.';
+  }
+
+  elIn.addEventListener('input', render);
+  Array.prototype.forEach.call(document.querySelectorAll('.presets button'), function (b) {
+    b.addEventListener('click', function () {
+      elIn.value = b.getAttribute('data-p');
+      render();
+      elIn.focus();
+    });
+  });
+
+  elIn.value = '%p %p %p %p %p %p';
+  render();
+})();
+</script>
+<script>
+(function () {
+  var sel = ".tablewrap, pre.src, pre, .cline, .sbytes, .tbl-scroll, table";
+  Array.prototype.forEach.call(document.querySelectorAll(sel), function (el) {
+    if (el.scrollWidth > el.clientWidth + 2 && !el.hasAttribute("tabindex")) {
+      el.setAttribute("tabindex", "0");
+      el.setAttribute("role", "region");
+      if (!el.hasAttribute("aria-label")) el.setAttribute("aria-label", "Scrollable content");
+      el.classList.add("js-scrollable");
+    }
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,1 +1,9 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256"><path d="M88 74l64 54-64 54" fill="none" stroke="#000" stroke-width="26" stroke-linecap="round" stroke-linejoin="round"/><rect x="162" y="168" width="52" height="18" rx="6" fill="#000"/></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16">
+<!-- Safari mask icon. Safari recolours this to the user's accent, so it must be a
+     single flat colour with no strokes, gradients or transparency. Drawn as a bold
+     two-shape glyph rather than a trace of the full logo, because the detail in the
+     raster mark turns to mush at tab size: hat on top, a gap for the eyes, bandana
+     below. That gap is what makes it read as a masked face at 16px. -->
+<path fill="#000" d="M8 1.7c-1.72 0-2.62 1.26-2.62 2.94v.72C3.18 5.62 1.6 6.21 1.6 6.92c0 .92 2.86 1.66 6.4 1.66s6.4-.74 6.4-1.66c0-.71-1.58-1.3-3.78-1.56v-.72C10.62 2.96 9.72 1.7 8 1.7z"/>
+<path fill="#000" d="M4.15 9.72c1.16.26 2.46.4 3.85.4s2.69-.14 3.85-.4L8 14.55z"/>
+</svg>
