@@ -353,8 +353,13 @@ reimplementation of it. Free to embed or link.</footer>
 
   function B(h) { return BigInt('0x' + h); }
   function hx16(v) { var s = v.toString(16); while (s.length < 16) s = '0' + s; return s; }
+  // Neutralises quotes as well as angle brackets, so this is safe in an
+  // attribute position and not only in element content. The sibling lab pages
+  // carry the same helper under the same name, and a maintainer copying one
+  // into the other should not inherit a weaker contract by accident.
   function esc(s) {
-    return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
   }
 
   var BUF_LO = B('00007ffd3c8a21e8'), BUF_SZ = 24;
