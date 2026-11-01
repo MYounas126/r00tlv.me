@@ -13,8 +13,15 @@
     {{- if not .Lastmod.IsZero }}
     <lastmod>{{ safeHTML ( .Lastmod.Format "2006-01-02T15:04:05-07:00" ) }}</lastmod>
     {{- end }}
-    {{- with .Sitemap.ChangeFreq }}<changefreq>{{ . }}</changefreq>{{ end }}
-    {{- if ge .Sitemap.Priority 0.0 }}<priority>{{ .Sitemap.Priority }}</priority>{{ end }}
+    {{- /* Every URL carried equal weight, and the result shows in Search Console:
+           eleven taxonomy pages are indexed against three posts, while six posts
+           have never been crawled. Priority is a weak hint rather than an
+           instruction, but it costs nothing to stop telling Google that
+           /tags/xss/ is worth as much as a 2,800-word post. */}}
+    {{- $pri := cond (eq .Kind "page") 1.0 (cond (in (slice "home" "section") .Kind) 0.7 0.3) }}
+    {{- $freq := cond (eq .Kind "page") "monthly" "weekly" }}
+    <changefreq>{{ with .Sitemap.ChangeFreq }}{{ . }}{{ else }}{{ $freq }}{{ end }}</changefreq>
+    <priority>{{ $pri }}</priority>
   </url>
   {{- end }}
   {{- end }}

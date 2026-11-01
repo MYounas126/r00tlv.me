@@ -1,0 +1,37 @@
+User-agent: *
+Disallow:
+
+# Search Console crawl stats: 627 requests over 90 days, about seven a day,
+# split Refresh 85% / Discovery 15%. That leaves roughly one discovery crawl per
+# day against eighteen URLs queued as "Discovered - currently not indexed", six
+# of which are posts that have never been crawled at all.
+#
+# The refresh share goes on roughly eighty known URLs, most worth nothing.
+# noindex does not help: Google must fetch a page to read its noindex, so a
+# noindex page still costs a crawl. Only Disallow stops the fetch. The rules
+# below hand that budget back to the posts.
+
+# Per-term RSS. Twelve of these plus the favicon sit under "Crawled - currently
+# not indexed", the correct verdict for a feed. They were crawled between 31 Aug
+# and 10 Sep while six posts went untouched for over a month. Feed readers are
+# unaffected, since robots.txt binds crawlers rather than subscribers.
+Disallow: /rss.xml
+Disallow: /*/rss.xml
+
+# page/1 is Hugo's paginator stub and duplicates the unpaginated URL by
+# definition, whatever the post count, so this can never hide real content.
+# pagerSize is 10 against 9 posts, so page/2 does not exist today either.
+Disallow: /page/1/
+Disallow: /*/page/1/
+
+# The ?from= marker that drove "show this post first" on a tag page. It became a
+# fragment on 11 September, yet Google was still re-crawling these on 23 October:
+# eighteen URLs, each a duplicate of its clean tag page. Nothing links to them
+# now, so no anchor text survives to keep them indexable once fetches stop.
+Disallow: /*?from=
+
+# Left crawlable on purpose: tag and category pages even where they are noindex,
+# since a term can earn a second post and become indexable again; and the legacy
+# GHSA alias, whose redirect must stay reachable to keep carrying weight.
+
+Sitemap: {{ "sitemap.xml" | absURL }}
