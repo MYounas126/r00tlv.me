@@ -10,6 +10,28 @@
   Content-Type: text/xsl; charset=utf-8
   Cache-Control: public, max-age=86400
 
+# Search Console lists twelve rss.xml files and the favicon under "Crawled -
+# currently not indexed". That verdict is correct, since a feed is not a page,
+# but Google spent crawl budget reaching them between 31 Aug and 10 Sep while
+# six real posts went uncrawled for over a month. Telling it plainly that the
+# feeds are not index candidates takes them out of that bucket and stops them
+# competing for attention on a domain with very little budget to spend.
+# noindex only, never nofollow: the feed's links to the posts should still be
+# followed, and on this site that is an extra discovery path to them.
+/*.xml
+  X-Robots-Tag: noindex
+
+/favicon.ico
+  X-Robots-Tag: noindex
+
+/*.webmanifest
+  X-Robots-Tag: noindex
+
+# The sitemap must stay crawlable and is harmless to leave unflagged, but an
+# explicit allow keeps the rule above from ever being read as covering it.
+/sitemap.xml
+  ! X-Robots-Tag
+
 # Fingerprinted assets never change under the same name
 /assets/*
   Cache-Control: public, max-age=31536000, immutable
