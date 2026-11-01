@@ -4,7 +4,10 @@
   {{- /* Hugo's built-in template honours `sitemap.disable` in front matter. This override
          has to repeat that check explicitly, otherwise a page like /search/ that is
          deliberately noindex reappears here and the two signals contradict each other. */}}
-  {{- if not .Sitemap.Disable }}
+  {{- /* Keep the sitemap and the robots tag saying the same thing: a term page
+         with a single post is noindex (see _partials/head.html), so it must not
+         be advertised here either. */}}
+  {{- if and (not .Sitemap.Disable) (not (and (eq .Kind "term") (lt (len .Pages) 2))) }}
   <url>
     <loc>{{ .Permalink }}</loc>
     {{- if not .Lastmod.IsZero }}

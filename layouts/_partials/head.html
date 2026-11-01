@@ -1,7 +1,17 @@
 <meta charset="utf-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-{{- if hugo.IsProduction | or (eq site.Params.env "production") | and (ne .Params.robotsNoIndex true) }}
+{{- /* A taxonomy term holding a single post is that post's title and summary and
+       nothing else. Google crawls it, finds roughly forty words it already has from
+       the post itself, and files it under "Crawled - currently not indexed". Asking
+       repeatedly spends crawl budget and fills the report with entries that will
+       never resolve, so these are noindex and dropped from the sitemap. The test is
+       on the live page count, so a term indexes itself again the moment it earns a
+       second post. follow is kept so the links out of it still carry weight. */}}
+{{- $thinTerm := and (eq .Kind "term") (lt (len .Pages) 2) }}
+{{- if or $thinTerm (eq .Params.robotsNoIndex true) }}
+<meta name="robots" content="noindex, follow">
+{{- else if hugo.IsProduction | or (eq site.Params.env "production") }}
 <meta name="robots" content="index, follow">
 {{- else }}
 <meta name="robots" content="noindex, nofollow">
