@@ -13,7 +13,7 @@ name: "Muhammad Younas"
 tagline: "A Security Researcher & Penetration Tester"
 avatar: "/img/avatar.png"
 links:
-  - { name: "email",      title: "Email",      url: "mailto:muhammadyounas.sec@gmail.com" }
+  - { name: "email",      title: "Email",      url: "mailto:m.younas@r00tlv.me" }
   - { name: "github",     title: "GitHub",     url: "https://github.com/MYounas126" }
   - { name: "linkedin",   title: "LinkedIn",   url: "https://www.linkedin.com/in/myounasec/" }
   - { name: "medium",     title: "Medium",     url: "https://thehackboy.medium.com/" }
@@ -25,7 +25,7 @@ A Cyber Security graduate with an avid interest in breaking and building things.
 
 ## Skills
 
-- **Programming Languages** : Python, Bash, JavaScript, Go, x86 Assembly
+- **Programming Languages** : Python, Bash, JavaScript/TypeScript, Go, x86 Assembly
 - **Tools & Frameworks** : Ghidra, IDA Pro, GDB, Pwntools, Frida, Objection, Jadx, Burp Suite, Nmap, Metasploit, Wireshark, Trivy, Snort
 - **Platforms** : Linux, Android, Docker, Web
 
@@ -34,8 +34,7 @@ A Cyber Security graduate with an avid interest in breaking and building things.
 - **Security Analyst** at VentureDive (June 2026 - Present)
 - **Application Security Analyst** at Next Generation Technologies (October 2025 - May 2026)
 - **Penetration Tester** at Systems Limited (May 2025 - October 2025)
-- **VAPT Intern** at Trillium Information Security Systems (June 2025 - August 2025)
-- **Web Application Penetration Tester** at GIKI, in-house (April 2023 - May 2025)
+- **Penetration Tester** (part-time, alongside studies) on GIKI's website security project (April 2023 - May 2025)
 
 ## Education
 
@@ -46,15 +45,21 @@ A Cyber Security graduate with an avid interest in breaking and building things.
 
 - [**GHSA-x24x-425w-326q**](https://github.com/Acode-Foundation/Acode/security/advisories/GHSA-x24x-425w-326q) - Cross-app scripting in the Acode Android code editor via an unsanitised filename reaching `innerHTML`. CVSS v4.0 8.3 (High), CWE-79. Patched in Acode 1.12.9. Three-part writeup: [what I found](/posts/acode-cross-app-scripting-what-i-found/) / [how I found it](/posts/acode-cross-app-scripting-how-i-found-it/) / [how to prevent it](/posts/acode-cross-app-scripting-how-to-prevent-it/).
 
+## Projects
+
+- [**Recall Lab**](https://community.obsidian.md/plugins/recall-lab) - Obsidian community plugin, about 10,000 lines of TypeScript ([source](https://github.com/MYounas126/recall-lab)). Spaced-repetition reviews and CTF-style labs generated from your notes, including x86-64 reversing and exploitation challenges that it builds and verifies in a sandboxed container.
+- [**SentinelFlow**](https://github.com/MYounas126/FYP) - Final-year project with two teammates: machine-learning network intrusion detection (Isolation Forest and XGBoost), 98.8% validation accuracy on 1.9M flows.
+
 ## Training
 
-- **pwn.college** - CSE 365: Foundations of Cybersecurity, Summer 2026 cohort (completed)
-- **pwn.college** - Software Security dojo (in progress)
+- **pwn.college** - CSE 365, Summer 2026 cohort (completed)
+- **pwn.college** - CSE 598 Reverse Engineering and Program Analysis dojo (in progress)
+- **Google Cybersecurity Professional Certificate** (June 2023)
 
 ## Reach out to me
 
 - CV: [Muhammad_Younas_CV.pdf](/cv/Muhammad_Younas_CV.pdf)
-- Email: muhammadyounas.sec@gmail.com
+- Email: m.younas@r00tlv.me
 - GitHub: [MYounas126](https://github.com/MYounas126)
 - LinkedIn: [myounasec](https://www.linkedin.com/in/myounasec/)
 - Medium: [thehackboy](https://thehackboy.medium.com/)
