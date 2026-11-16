@@ -53,6 +53,7 @@ A Cyber Security graduate with an avid interest in breaking and building things.
 
 ## Reach out to me
 
+- CV: [Muhammad_Younas_CV.pdf](/cv/Muhammad_Younas_CV.pdf)
 - Email: muhammadyounas.sec@gmail.com
 - GitHub: [MYounas126](https://github.com/MYounas126)
 - LinkedIn: [myounasec](https://www.linkedin.com/in/myounasec/)

@@ -41,3 +41,9 @@
 
 /img/*
   Cache-Control: public, max-age=604800
+
+# The CV is for people who follow the link from the About page or a job
+# application. It is not a post, so keep it out of search results and out of
+# the crawl budget the posts need.
+/cv/*
+  X-Robots-Tag: noindex
